@@ -5,6 +5,7 @@ import {
   normalizeClientKey,
   normalizeName,
 } from './db'
+import { buildRssFeed } from './rss'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -64,6 +65,21 @@ export default {
 
     if (url.pathname.startsWith('/api/')) {
       return handleApi(request, env, url.pathname)
+    }
+
+    if (
+      request.method === 'GET' &&
+      (url.pathname === '/feed.xml' || url.pathname === '/rss' || url.pathname === '/rss.xml')
+    ) {
+      const wall = await fetchWall(env.DB)
+      const siteUrl = `${url.protocol}//${url.host}`
+      const xml = buildRssFeed(siteUrl, wall)
+      return new Response(xml, {
+        headers: {
+          'Content-Type': 'application/rss+xml; charset=utf-8',
+          'Cache-Control': 'public, max-age=300',
+        },
+      })
     }
 
     return env.ASSETS.fetch(request)

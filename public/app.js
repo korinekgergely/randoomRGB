@@ -7,10 +7,33 @@ const filterHex = document.getElementById('filterHex')
 const filterName = document.getElementById('filterName')
 const filterClear = document.getElementById('filterClear')
 const filterMessage = document.getElementById('filterMessage')
+const infoToggle = document.getElementById('infoToggle')
+const infoPanel = document.getElementById('infoPanel')
+const infoClose = document.getElementById('infoClose')
 
 const CLIENT_KEY_STORAGE = 'colorWallClientKey'
+const MESSAGE_HIDE_MS = 30000
 
 let allColors = []
+const messageTimers = new WeakMap()
+
+function hideMessage(el) {
+  const timer = messageTimers.get(el)
+  if (timer) {
+    window.clearTimeout(timer)
+    messageTimers.delete(el)
+  }
+  el.hidden = true
+  el.textContent = ''
+}
+
+function showTemporaryMessage(el, text) {
+  hideMessage(el)
+  el.textContent = text
+  el.hidden = false
+  const timer = window.setTimeout(() => hideMessage(el), MESSAGE_HIDE_MS)
+  messageTimers.set(el, timer)
+}
 
 function getClientKey() {
   let key = localStorage.getItem(CLIENT_KEY_STORAGE)
@@ -21,9 +44,44 @@ function getClientKey() {
   return key
 }
 
-function formatLikes(likes) {
+function escapeHtml(text) {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+}
+
+function highlightSubstring(text, query) {
+  if (!query) return escapeHtml(text)
+
+  const parts = []
+  const lower = text.toLowerCase()
+  const q = query.toLowerCase()
+  let start = 0
+  let index = lower.indexOf(q, start)
+
+  while (index !== -1) {
+    if (index > start) parts.push(escapeHtml(text.slice(start, index)))
+    parts.push(
+      `<mark class="like-highlight">${escapeHtml(text.slice(index, index + q.length))}</mark>`,
+    )
+    start = index + q.length
+    index = lower.indexOf(q, start)
+  }
+
+  if (start < text.length) parts.push(escapeHtml(text.slice(start)))
+  return parts.join('')
+}
+
+function renderLikesHtml(likes, nameQuery) {
   if (!likes.length) return '0 like'
-  const labels = likes.map((like) => (like.name ? like.name : 'Anonymous'))
+
+  const labels = likes.map((like) => {
+    const label = like.name || 'Anonymous'
+    return nameQuery ? highlightSubstring(label, nameQuery) : escapeHtml(label)
+  })
+
   return `${likes.length} like · ${labels.join(', ')}`
 }
 
@@ -72,19 +130,15 @@ function getFilteredColors() {
 }
 
 function clearFilterMessage() {
-  filterMessage.hidden = true
-  filterMessage.textContent = ''
+  hideMessage(filterMessage)
 }
 
 function showFilterMessage(text) {
-  filterMessage.textContent = text
-  filterMessage.hidden = false
+  showTemporaryMessage(filterMessage, text)
 }
 
-function updateFilterUi(filteredCount) {
-  const active = hasActiveFilters()
-  filterClear.hidden = !active
-  wallEl.classList.toggle('wall-filtered-single', active && filteredCount === 1)
+function updateFilterUi() {
+  filterClear.hidden = !hasActiveFilters()
 }
 
 function applyFilters() {
@@ -97,7 +151,7 @@ function applyFilters() {
     clearFilterMessage()
   }
 
-  updateFilterUi(filtered.length)
+  updateFilterUi()
   renderWall(filtered)
 }
 
@@ -106,14 +160,32 @@ function clearFilters() {
   filterHex.value = ''
   filterName.value = ''
   clearFilterMessage()
-  updateFilterUi(allColors.length)
+  updateFilterUi()
   renderWall(allColors)
+}
+
+function updateDateFilterBounds() {
+  if (!allColors.length) {
+    filterDate.removeAttribute('min')
+    return
+  }
+
+  const firstDate = allColors.reduce((earliest, color) => {
+    return color.colorDate < earliest ? color.colorDate : earliest
+  }, allColors[0].colorDate)
+
+  filterDate.min = firstDate
+
+  if (filterDate.value && filterDate.value < firstDate) {
+    filterDate.value = ''
+  }
 }
 
 async function loadWall() {
   const res = await fetch('/api/wall')
   const data = await res.json()
   allColors = data.colors ?? []
+  updateDateFilterBounds()
 
   if (hasActiveFilters()) {
     applyFilters()
@@ -140,11 +212,12 @@ function renderWall(colors) {
     swatch.style.backgroundColor = color.hex
     hexEl.textContent = color.hex
     dateEl.textContent = formatDate(color.colorDate)
-    likesEl.textContent = formatLikes(color.likes)
+    likesEl.innerHTML = renderLikesHtml(color.likes, filterName.value.trim())
 
     form.addEventListener('submit', async (event) => {
       event.preventDefault()
       errorEl.hidden = true
+      hideMessage(errorEl)
       form.querySelector('button').disabled = true
 
       try {
@@ -165,15 +238,13 @@ function renderWall(colors) {
             already_liked: 'You already liked this color from this browser.',
             color_not_found: 'Color not found.',
           }
-          errorEl.textContent = messages[result.error] || 'Like failed.'
-          errorEl.hidden = false
+          showTemporaryMessage(errorEl, messages[result.error] || 'Like failed.')
           return
         }
 
         await loadWall()
       } catch {
-        errorEl.textContent = 'Network error.'
-        errorEl.hidden = false
+        showTemporaryMessage(errorEl, 'Network error.')
       } finally {
         form.querySelector('button').disabled = false
       }
@@ -187,10 +258,37 @@ filterForm.addEventListener('input', applyFilters)
 filterForm.addEventListener('change', applyFilters)
 filterClear.addEventListener('click', clearFilters)
 
+function closeInfoPanel() {
+  infoPanel.hidden = true
+  infoToggle.setAttribute('aria-expanded', 'false')
+}
+
+function openInfoPanel() {
+  infoPanel.hidden = false
+  infoToggle.setAttribute('aria-expanded', 'true')
+}
+
+infoToggle.addEventListener('click', (event) => {
+  event.stopPropagation()
+  if (infoPanel.hidden) openInfoPanel()
+  else closeInfoPanel()
+})
+
+infoClose.addEventListener('click', closeInfoPanel)
+
+document.addEventListener('click', (event) => {
+  if (infoPanel.hidden) return
+  if (!event.target.closest('.info-popover')) closeInfoPanel()
+})
+
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape' && !infoPanel.hidden) closeInfoPanel()
+})
+
 sizeSlider.addEventListener('input', () => {
   setTileSize(Number(sizeSlider.value))
 })
 
 setTileSize(Number(sizeSlider.value))
-updateFilterUi(0)
+updateFilterUi()
 loadWall()
