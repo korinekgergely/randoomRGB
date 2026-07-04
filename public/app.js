@@ -15,13 +15,12 @@ function getClientKey() {
 
 function formatLikes(likes) {
   if (!likes.length) return '0 like'
-  const labels = likes.map((like) => (like.name ? like.name : 'Anonim'))
+  const labels = likes.map((like) => (like.name ? like.name : 'Anonymous'))
   return `${likes.length} like · ${labels.join(', ')}`
 }
 
 function formatDate(isoDate) {
-  const [y, m, d] = isoDate.split('-')
-  return `${y}.${m}.${d}.`
+  return isoDate
 }
 
 function setTileSize(px) {
@@ -71,18 +70,18 @@ function renderWall(colors) {
         const result = await response.json()
         if (!response.ok || !result.ok) {
           const messages = {
-            name_taken: 'Ez a név már szerepel ennél a színnél.',
-            already_liked: 'Ebből a böngészőből már like-oltad ezt a színt.',
-            color_not_found: 'A szín nem található.',
+            name_taken: 'This name is already taken for this color.',
+            already_liked: 'You already liked this color from this browser.',
+            color_not_found: 'Color not found.',
           }
-          errorEl.textContent = messages[result.error] || 'Like sikertelen.'
+          errorEl.textContent = messages[result.error] || 'Like failed.'
           errorEl.hidden = false
           return
         }
 
         await loadWall()
       } catch {
-        errorEl.textContent = 'Hálózati hiba.'
+        errorEl.textContent = 'Network error.'
         errorEl.hidden = false
       } finally {
         form.querySelector('button').disabled = false
