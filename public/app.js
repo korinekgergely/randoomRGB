@@ -11,11 +11,16 @@ const infoToggle = document.getElementById('infoToggle')
 const infoPanel = document.getElementById('infoPanel')
 const infoClose = document.getElementById('infoClose')
 const labelsToggle = document.getElementById('labelsToggle')
+const sortSelect = document.getElementById('sortSelect')
+const sortClear = document.getElementById('sortClear')
 const colorImmersiveEl = document.getElementById('colorImmersive')
 
 const CLIENT_KEY_STORAGE = 'colorWallClientKey'
 const TILE_SIZE_STORAGE = 'colorWallTileSize'
 const LABELS_HIDDEN_STORAGE = 'colorWallLabelsHidden'
+const SORT_STORAGE = 'colorWallSortMode'
+const SORT_MODES = ['date-desc', 'date-asc', 'hex-asc', 'hex-desc', 'likes-desc', 'likes-asc']
+const SORT_DEFAULT = 'date-desc'
 const MESSAGE_HIDE_MS = 30000
 const ACTION_FEEDBACK_MS = 10000
 const TILE_SIZE_MIN = 20
@@ -262,6 +267,62 @@ function getFilteredColors() {
   return colors
 }
 
+function hexSortKey(hex) {
+  return hex.toUpperCase().replace(/^#/, '')
+}
+
+function likeCount(color) {
+  return color.likes.length
+}
+
+function sortColors(colors) {
+  const mode = sortSelect.value
+  const sorted = [...colors]
+
+  if (mode === 'date-asc') {
+    sorted.sort((a, b) => a.colorDate.localeCompare(b.colorDate))
+    return sorted
+  }
+  if (mode === 'hex-asc') {
+    sorted.sort((a, b) => hexSortKey(a.hex).localeCompare(hexSortKey(b.hex)))
+    return sorted
+  }
+  if (mode === 'hex-desc') {
+    sorted.sort((a, b) => hexSortKey(b.hex).localeCompare(hexSortKey(a.hex)))
+    return sorted
+  }
+  if (mode === 'likes-desc') {
+    sorted.sort((a, b) => {
+      const diff = likeCount(b) - likeCount(a)
+      return diff !== 0 ? diff : b.colorDate.localeCompare(a.colorDate)
+    })
+    return sorted
+  }
+  if (mode === 'likes-asc') {
+    sorted.sort((a, b) => {
+      const diff = likeCount(a) - likeCount(b)
+      return diff !== 0 ? diff : b.colorDate.localeCompare(a.colorDate)
+    })
+    return sorted
+  }
+
+  sorted.sort((a, b) => b.colorDate.localeCompare(a.colorDate))
+  return sorted
+}
+
+function getDisplayColors() {
+  return sortColors(getFilteredColors())
+}
+
+function loadSortMode() {
+  const stored = localStorage.getItem(SORT_STORAGE)
+  sortSelect.value = SORT_MODES.includes(stored) ? stored : SORT_DEFAULT
+}
+
+function saveSortMode() {
+  localStorage.setItem(SORT_STORAGE, sortSelect.value)
+}
+
 function clearFilterMessage() {
   hideMessage(filterMessage)
 }
@@ -270,23 +331,46 @@ function showFilterMessage(text) {
   showTemporaryMessage(filterMessage, text)
 }
 
+function hasActiveSort() {
+  return sortSelect.value !== SORT_DEFAULT
+}
+
 function updateFilterUi() {
   filterClear.hidden = !hasActiveFilters()
 }
 
-function applyFilters() {
-  const filtered = getFilteredColors()
+function updateSortUi() {
+  sortClear.hidden = !hasActiveSort()
+}
+
+function updateToolbarUi() {
+  updateFilterUi()
+  updateSortUi()
+}
+
+function refreshWallDisplay() {
+  const colors = getDisplayColors()
   const active = hasActiveFilters()
 
-  if (active && filtered.length === 0) {
+  if (active && colors.length === 0) {
     showFilterMessage('No matching colors.')
   } else {
     clearFilterMessage()
   }
 
-  updateFilterUi()
-  renderWall(filtered)
+  updateToolbarUi()
+  renderWall(colors)
+}
+
+function applyFilters() {
+  refreshWallDisplay()
   syncDateToUrl()
+}
+
+function clearSort() {
+  sortSelect.value = SORT_DEFAULT
+  saveSortMode()
+  refreshWallDisplay()
 }
 
 function clearFilters() {
@@ -294,9 +378,9 @@ function clearFilters() {
   filterHex.value = ''
   filterName.value = ''
   clearFilterMessage()
-  updateFilterUi()
+  updateToolbarUi()
   syncDateToUrl()
-  renderWall(allColors)
+  refreshWallDisplay()
 }
 
 function updateDateFilterBounds() {
@@ -348,13 +432,7 @@ async function loadWall() {
   allColors = data.colors ?? []
   updateDateFilterBounds()
   applyDateFromUrl()
-
-  if (hasActiveFilters()) {
-    applyFilters()
-    return
-  }
-
-  renderWall(allColors)
+  refreshWallDisplay()
 }
 
 function exitColorImmersive() {
@@ -481,6 +559,11 @@ function renderWall(colors) {
 filterForm.addEventListener('input', applyFilters)
 filterForm.addEventListener('change', applyFilters)
 filterClear.addEventListener('click', clearFilters)
+sortClear.addEventListener('click', clearSort)
+sortSelect.addEventListener('change', () => {
+  saveSortMode()
+  refreshWallDisplay()
+})
 
 function closeInfoPanel() {
   infoPanel.hidden = true
@@ -527,6 +610,7 @@ window.matchMedia('(max-width: 480px)').addEventListener('change', applyLabelsSt
 window.addEventListener('resize', applyLabelsState)
 
 loadTileSize()
+loadSortMode()
 applyLabelsState()
-updateFilterUi()
+updateToolbarUi()
 loadWall()

@@ -129,6 +129,50 @@ body {
   width: min(220px, 40vw);
 }
 
+.sort-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.9rem;
+}
+
+.sort-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sort-select {
+  min-width: 11rem;
+  padding: 6px 28px 6px 8px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23555' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 8px center;
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+  appearance: none;
+}
+
+.sort-select:hover {
+  border-color: #999;
+}
+
+.sort-select:focus-visible {
+  outline: 2px solid #222;
+  outline-offset: 1px;
+}
+
+.sort-group button {
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background: #fff;
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+
 .filters {
   display: flex;
   flex-wrap: wrap;
@@ -463,8 +507,20 @@ body.color-immersive {
 
   .filter-group,
   .filters,
+  .sort-group,
   .size-control,
   .labels-toggle {
+    width: 100%;
+  }
+
+  .sort-field {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .sort-select {
+    flex: 1;
+    min-width: 0;
     width: 100%;
   }
 

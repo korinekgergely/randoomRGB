@@ -50,6 +50,20 @@
         <p class="filter-message" id="filterMessage" hidden></p>
         </form>
       </div>
+      <div class="sort-group">
+        <label class="sort-field" for="sortSelect">
+          <span>Sort</span>
+          <select id="sortSelect" class="sort-select" aria-label="Sort colors">
+            <option value="date-desc">Date, newest</option>
+            <option value="date-asc">Date, oldest</option>
+            <option value="hex-asc">Hex, A→Z</option>
+            <option value="hex-desc">Hex, Z→A</option>
+            <option value="likes-desc">Likes, most</option>
+            <option value="likes-asc">Likes, fewest</option>
+          </select>
+        </label>
+        <button type="button" id="sortClear" hidden>Clear</button>
+      </div>
       <label class="size-control">
         <span>Cell size</span>
         <input id="sizeSlider" type="range" min="20" max="280" value="120" />
