@@ -21,7 +21,6 @@ const TILE_SIZE_MIN = 20
 const TILE_SIZE_MAX = 280
 const TILE_SIZE_DEFAULT = 120
 const TILE_SIZE_LABELS_THRESHOLD = TILE_SIZE_DEFAULT
-const MOBILE_TILE_COLUMNS = 3
 
 let allColors = []
 const messageTimers = new WeakMap()
@@ -165,20 +164,13 @@ function isMobileLayout() {
   return window.matchMedia('(max-width: 480px)').matches
 }
 
-function getMobileTileMax() {
-  const gap = Number.parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--gap')) || 10
-  return (window.innerWidth - 32 - (MOBILE_TILE_COLUMNS - 1) * gap) / MOBILE_TILE_COLUMNS
-}
-
-function getEffectiveTileSize() {
-  const sliderSize = Number(sizeSlider.value)
-  if (!isMobileLayout()) return sliderSize
-  return Math.min(sliderSize, getMobileTileMax())
+function getSliderTileSize() {
+  return Number(sizeSlider.value)
 }
 
 function syncLabelsToggleUi() {
   const hidden = document.body.classList.contains('labels-hidden')
-  const forcedBySize = getEffectiveTileSize() < TILE_SIZE_LABELS_THRESHOLD
+  const forcedBySize = getSliderTileSize() < TILE_SIZE_LABELS_THRESHOLD
   labelsToggle.textContent = hidden ? 'Show labels' : 'Hide labels'
   labelsToggle.setAttribute('aria-pressed', hidden ? 'true' : 'false')
   labelsToggle.disabled = forcedBySize
@@ -186,7 +178,7 @@ function syncLabelsToggleUi() {
 
 function applyLabelsState() {
   const userHidden = localStorage.getItem(LABELS_HIDDEN_STORAGE) === '1'
-  const hidden = getEffectiveTileSize() < TILE_SIZE_LABELS_THRESHOLD || userHidden
+  const hidden = getSliderTileSize() < TILE_SIZE_LABELS_THRESHOLD || userHidden
   document.body.classList.toggle('labels-hidden', hidden)
   syncLabelsToggleUi()
 }
