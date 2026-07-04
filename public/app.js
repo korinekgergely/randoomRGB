@@ -74,6 +74,12 @@ function highlightSubstring(text, query) {
   return parts.join('')
 }
 
+function renderHexHtml(hex, hexQuery) {
+  const normalized = hex.toUpperCase()
+  if (!hexQuery) return escapeHtml(normalized)
+  return highlightSubstring(normalized, hexQuery)
+}
+
 function renderLikesHtml(likes, nameQuery) {
   if (!likes.length) return '0 like'
 
@@ -97,10 +103,13 @@ function hasActiveFilters() {
   return Boolean(filterDate.value || filterHex.value.trim() || filterName.value.trim())
 }
 
-function normalizeHexQuery(raw) {
-  const query = raw.trim().toUpperCase().replace(/^#/, '')
-  if (!query) return ''
-  return `#${query}`
+function getHexQuery() {
+  return filterHex.value.trim().toUpperCase().replace(/^#/, '')
+}
+
+function colorMatchesHex(color, query) {
+  const hex = color.hex.toUpperCase().replace(/^#/, '')
+  return hex.includes(query)
 }
 
 function colorMatchesName(color, query) {
@@ -113,14 +122,14 @@ function colorMatchesName(color, query) {
 function getFilteredColors() {
   let colors = allColors
   const date = filterDate.value
-  const hexQuery = normalizeHexQuery(filterHex.value)
+  const hexQuery = getHexQuery()
   const nameQuery = filterName.value.trim().toLowerCase()
 
   if (date) {
     colors = colors.filter((color) => color.colorDate === date)
   }
   if (hexQuery) {
-    colors = colors.filter((color) => color.hex.toUpperCase().includes(hexQuery))
+    colors = colors.filter((color) => colorMatchesHex(color, hexQuery))
   }
   if (nameQuery) {
     colors = colors.filter((color) => colorMatchesName(color, nameQuery))
@@ -210,7 +219,7 @@ function renderWall(colors) {
 
     node.dataset.colorDate = color.colorDate
     swatch.style.backgroundColor = color.hex
-    hexEl.textContent = color.hex
+    hexEl.innerHTML = renderHexHtml(color.hex, getHexQuery())
     dateEl.textContent = formatDate(color.colorDate)
     likesEl.innerHTML = renderLikesHtml(color.likes, filterName.value.trim())
 
