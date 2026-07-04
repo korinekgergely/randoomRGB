@@ -51,6 +51,19 @@ body {
   font-weight: 600;
 }
 
+.site-title {
+  color: inherit;
+  text-decoration: none;
+}
+
+.site-title--reset {
+  cursor: pointer;
+}
+
+.site-title--reset:hover {
+  text-decoration: underline;
+}
+
 .brand {
   display: flex;
   flex-wrap: wrap;

@@ -13,6 +13,7 @@ const infoClose = document.getElementById('infoClose')
 const labelsToggle = document.getElementById('labelsToggle')
 const sortSelect = document.getElementById('sortSelect')
 const sortClear = document.getElementById('sortClear')
+const siteTitle = document.getElementById('siteTitle')
 const colorImmersiveEl = document.getElementById('colorImmersive')
 
 const CLIENT_KEY_STORAGE = 'colorWallClientKey'
@@ -367,6 +368,30 @@ function applyFilters() {
   syncDateToUrl()
 }
 
+function hasDateInUrl() {
+  const date = new URLSearchParams(window.location.search).get('date')
+  return Boolean(date && isValidIsoDate(date))
+}
+
+function updateSiteTitleState() {
+  siteTitle.classList.toggle('site-title--reset', hasDateInUrl())
+}
+
+function resetToDefaultView() {
+  filterDate.value = ''
+  filterHex.value = ''
+  filterName.value = ''
+  sortSelect.value = SORT_DEFAULT
+  saveSortMode()
+  clearFilterMessage()
+  const url = new URL(window.location.href)
+  url.search = ''
+  window.history.replaceState(null, '', url)
+  updateSiteTitleState()
+  updateToolbarUi()
+  refreshWallDisplay()
+}
+
 function clearSort() {
   sortSelect.value = SORT_DEFAULT
   saveSortMode()
@@ -417,6 +442,7 @@ function syncDateToUrl() {
   if (filterDate.value) url.searchParams.set('date', filterDate.value)
   else url.searchParams.delete('date')
   window.history.replaceState(null, '', url)
+  updateSiteTitleState()
 }
 
 function applyDateFromUrl() {
@@ -560,6 +586,11 @@ filterForm.addEventListener('input', applyFilters)
 filterForm.addEventListener('change', applyFilters)
 filterClear.addEventListener('click', clearFilters)
 sortClear.addEventListener('click', clearSort)
+siteTitle.addEventListener('click', (event) => {
+  if (!hasDateInUrl()) return
+  event.preventDefault()
+  resetToDefaultView()
+})
 sortSelect.addEventListener('change', () => {
   saveSortMode()
   refreshWallDisplay()
@@ -613,4 +644,5 @@ loadTileSize()
 loadSortMode()
 applyLabelsState()
 updateToolbarUi()
+updateSiteTitleState()
 loadWall()
