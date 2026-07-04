@@ -191,7 +191,8 @@ function updateDateFilterBounds() {
 }
 
 async function loadWall() {
-  const res = await fetch('/api/wall')
+  const clientKey = getClientKey()
+  const res = await fetch(`/api/wall?clientKey=${encodeURIComponent(clientKey)}`)
   const data = await res.json()
   allColors = data.colors ?? []
   updateDateFilterBounds()
@@ -214,6 +215,7 @@ function renderWall(colors) {
     const dateEl = node.querySelector('.date')
     const likesEl = node.querySelector('.likes')
     const form = node.querySelector('.like-form')
+    const unlikeBtn = node.querySelector('.unlike-btn')
     const errorEl = node.querySelector('.like-error')
     const nameInput = form.querySelector('input[name="name"]')
 
@@ -222,6 +224,14 @@ function renderWall(colors) {
     hexEl.innerHTML = renderHexHtml(color.hex, getHexQuery())
     dateEl.textContent = formatDate(color.colorDate)
     likesEl.innerHTML = renderLikesHtml(color.likes, filterName.value.trim())
+
+    if (color.likedByClient) {
+      form.hidden = true
+      unlikeBtn.hidden = false
+    } else {
+      form.hidden = false
+      unlikeBtn.hidden = true
+    }
 
     form.addEventListener('submit', async (event) => {
       event.preventDefault()
@@ -256,6 +266,38 @@ function renderWall(colors) {
         showTemporaryMessage(errorEl, 'Network error.')
       } finally {
         form.querySelector('button').disabled = false
+      }
+    })
+
+    unlikeBtn.addEventListener('click', async () => {
+      hideMessage(errorEl)
+      unlikeBtn.disabled = true
+
+      try {
+        const response = await fetch('/api/unlike', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            colorId: color.id,
+            clientKey: getClientKey(),
+          }),
+        })
+
+        const result = await response.json()
+        if (!response.ok || !result.ok) {
+          const messages = {
+            not_liked: 'You have not liked this color from this browser.',
+            color_not_found: 'Color not found.',
+          }
+          showTemporaryMessage(errorEl, messages[result.error] || 'Unlike failed.')
+          return
+        }
+
+        await loadWall()
+      } catch {
+        showTemporaryMessage(errorEl, 'Network error.')
+      } finally {
+        unlikeBtn.disabled = false
       }
     })
 

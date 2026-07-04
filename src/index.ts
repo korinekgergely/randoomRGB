@@ -4,6 +4,7 @@ import {
   fetchWall,
   normalizeClientKey,
   normalizeName,
+  removeLike,
 } from './db'
 import { buildRssFeed } from './rss'
 
@@ -26,7 +27,8 @@ async function handleApi(request: Request, env: Env, pathname: string) {
   }
 
   if (pathname === '/api/wall' && request.method === 'GET') {
-    const wall = await fetchWall(env.DB)
+    const clientKey = normalizeClientKey(new URL(request.url).searchParams.get('clientKey'))
+    const wall = await fetchWall(env.DB, clientKey)
     return json({ colors: wall })
   }
 
@@ -50,6 +52,31 @@ async function handleApi(request: Request, env: Env, pathname: string) {
     }
 
     const result = await addLike(env.DB, colorId, clientKey, name)
+    if (!result.ok) {
+      return json(result, 409)
+    }
+    return json({ ok: true })
+  }
+
+  if (pathname === '/api/unlike' && request.method === 'POST') {
+    let body: Record<string, unknown>
+    try {
+      body = await request.json()
+    } catch {
+      return json({ ok: false, error: 'invalid_json' }, 400)
+    }
+
+    const colorId = Number(body.colorId)
+    const clientKey = normalizeClientKey(body.clientKey)
+
+    if (!Number.isInteger(colorId) || colorId < 1) {
+      return json({ ok: false, error: 'invalid_color' }, 400)
+    }
+    if (!clientKey) {
+      return json({ ok: false, error: 'invalid_client_key' }, 400)
+    }
+
+    const result = await removeLike(env.DB, colorId, clientKey)
     if (!result.ok) {
       return json(result, 409)
     }

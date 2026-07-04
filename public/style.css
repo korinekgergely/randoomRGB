@@ -78,8 +78,8 @@ body {
   top: calc(100% + 6px);
   left: 0;
   z-index: 2;
-  width: max-content;
-  max-width: min(18rem, calc(100vw - 32px));
+  width: min(26rem, calc(100vw - 32px));
+  max-width: calc(100vw - 32px);
   padding: 10px 12px;
   border: 1px solid #ddd;
   border-radius: 8px;
@@ -266,6 +266,23 @@ body {
 }
 
 .like-form button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.unlike-btn {
+  width: 100%;
+  margin-top: 8px;
+  padding: 6px 8px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background: #fff;
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.unlike-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
