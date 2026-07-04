@@ -2,7 +2,7 @@ import {
   addLike,
   ensureDailyColor,
   fetchWall,
-  getFirstColorHex,
+  getLatestColorHex,
   normalizeClientKey,
   normalizeName,
   removeLike,
@@ -100,7 +100,7 @@ export default {
       request.method === 'GET' &&
       (url.pathname === '/favicon.svg' || url.pathname === '/favicon.ico')
     ) {
-      const hex = (await getFirstColorHex(env.DB)) ?? getDefaultFaviconHex()
+      const hex = (await getLatestColorHex(env.DB)) ?? getDefaultFaviconHex()
       return new Response(buildColorFaviconSvg(hex), {
         headers: {
           'Content-Type': 'image/svg+xml; charset=utf-8',
