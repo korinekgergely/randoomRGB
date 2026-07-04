@@ -267,9 +267,7 @@ body.color-immersive {
   overflow: hidden;
 }
 
-.labels-hidden .tile:hover .swatch-hex,
-.labels-hidden .tile:focus-within .swatch-hex,
-.labels-hidden .tile:active .swatch-hex {
+.labels-hidden .swatch-hex {
   display: flex;
 }
 
@@ -304,14 +302,15 @@ body.color-immersive {
 .hex-row {
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-start;
-  gap: 6px;
+  align-items: center;
+  gap: 4px 6px;
   margin-bottom: 4px;
 }
 
 .hex {
-  flex: 1 1 100%;
+  flex: 0 1 auto;
   min-width: 0;
+  max-width: 100%;
   margin: 0;
   font-weight: 700;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -320,6 +319,7 @@ body.color-immersive {
 
 .hex-actions {
   display: flex;
+  flex: 0 0 auto;
   gap: 4px;
 }
 

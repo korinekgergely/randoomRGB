@@ -90,12 +90,21 @@ function renderHexHtml(hex, hexQuery) {
 function renderLikesHtml(likes, nameQuery) {
   if (!likes.length) return '0 like'
 
-  const labels = likes.map((like) => {
-    const label = like.name || 'Anonymous'
-    return nameQuery ? highlightSubstring(label, nameQuery) : escapeHtml(label)
-  })
+  const labels = []
+  let hasAnonymous = false
 
-  return `${likes.length} like · ${labels.join(', ')}`
+  for (const like of likes) {
+    if (like.name) labels.push(like.name)
+    else hasAnonymous = true
+  }
+
+  if (hasAnonymous) labels.push('Anonymous')
+
+  const rendered = labels.map((label) =>
+    nameQuery ? highlightSubstring(label, nameQuery) : escapeHtml(label),
+  )
+
+  return `${likes.length} like · ${rendered.join(', ')}`
 }
 
 function formatDate(isoDate) {
@@ -156,19 +165,10 @@ function syncLabelsToggleUi() {
   labelsToggle.setAttribute('aria-pressed', hidden ? 'true' : 'false')
 }
 
-function syncTileLabelAccess() {
-  const hidden = document.body.classList.contains('labels-hidden')
-  for (const tile of wallEl.querySelectorAll('.tile')) {
-    if (hidden) tile.setAttribute('tabindex', '0')
-    else tile.removeAttribute('tabindex')
-  }
-}
-
 function setLabelsHidden(hidden) {
   document.body.classList.toggle('labels-hidden', hidden)
   localStorage.setItem(LABELS_HIDDEN_STORAGE, hidden ? '1' : '0')
   syncLabelsToggleUi()
-  syncTileLabelAccess()
 }
 
 function loadLabelsHidden() {
@@ -428,8 +428,6 @@ function renderWall(colors) {
 
     wallEl.appendChild(node)
   }
-
-  syncTileLabelAccess()
 }
 
 filterForm.addEventListener('input', applyFilters)
