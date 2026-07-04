@@ -411,6 +411,12 @@ body.color-immersive {
 }
 
 @media (max-width: 480px) {
+  .tile {
+    flex: 1 1 min(var(--tile-size), 33%);
+    width: min(var(--tile-size), 33%);
+    max-width: min(var(--tile-size), 33%);
+  }
+
   .brand {
     width: 100%;
   }
