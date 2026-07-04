@@ -118,20 +118,35 @@ function saveTileSize() {
   localStorage.setItem(TILE_SIZE_STORAGE, sizeSlider.value)
 }
 
-async function copyHexValue(hex, button) {
+async function copyToClipboard(text, button, failLabel = 'Failed') {
   try {
-    await navigator.clipboard.writeText(hex)
+    await navigator.clipboard.writeText(text)
     const original = button.textContent
     button.textContent = 'Copied!'
     window.setTimeout(() => {
       button.textContent = original
     }, 1500)
   } catch {
-    button.textContent = 'Failed'
+    const original = button.textContent
+    button.textContent = failLabel
     window.setTimeout(() => {
-      button.textContent = 'Copy'
+      button.textContent = original
     }, 1500)
   }
+}
+
+function buildColorShareUrl(colorDate) {
+  const url = new URL(window.location.origin + window.location.pathname)
+  url.searchParams.set('date', colorDate)
+  return url.toString()
+}
+
+async function copyHexValue(hex, button) {
+  await copyToClipboard(hex, button)
+}
+
+async function copyShareUrl(colorDate, button) {
+  await copyToClipboard(buildColorShareUrl(colorDate), button)
 }
 
 function syncLabelsToggleUi() {
@@ -299,9 +314,11 @@ function renderWall(colors) {
   for (const color of colors) {
     const node = tileTemplate.content.firstElementChild.cloneNode(true)
     const swatch = node.querySelector('.swatch')
-    const swatchHex = node.querySelector('.swatch-hex')
+    const swatchHexWhite = node.querySelector('.swatch-hex-white')
+    const swatchHexBlack = node.querySelector('.swatch-hex-black')
     const hexEl = node.querySelector('.hex')
     const copyHexBtn = node.querySelector('.copy-hex-btn')
+    const shareColorBtn = node.querySelector('.share-color-btn')
     const dateEl = node.querySelector('.date')
     const likesEl = node.querySelector('.likes')
     const form = node.querySelector('.like-form')
@@ -311,9 +328,11 @@ function renderWall(colors) {
 
     node.dataset.colorDate = color.colorDate
     swatch.style.backgroundColor = color.hex
-    swatchHex.textContent = color.hex
+    swatchHexWhite.textContent = color.hex
+    swatchHexBlack.textContent = color.hex
     hexEl.innerHTML = renderHexHtml(color.hex, getHexQuery())
     copyHexBtn.addEventListener('click', () => copyHexValue(color.hex, copyHexBtn))
+    shareColorBtn.addEventListener('click', () => copyShareUrl(color.colorDate, shareColorBtn))
     dateEl.textContent = formatDate(color.colorDate)
     likesEl.innerHTML = renderLikesHtml(color.likes, filterName.value.trim())
 

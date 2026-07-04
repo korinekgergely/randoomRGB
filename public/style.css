@@ -224,18 +224,29 @@ body {
   position: absolute;
   inset: 0;
   display: none;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 2px;
   padding: 6px;
+  pointer-events: none;
+}
+
+.swatch-hex-white,
+.swatch-hex-black {
   font-weight: 700;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: clamp(0.6rem, 2.5vw, 0.85rem);
-  line-height: 1.2;
+  line-height: 1.1;
   text-align: center;
+}
+
+.swatch-hex-white {
   color: #fff;
-  -webkit-text-stroke: 1px #000;
-  paint-order: stroke fill;
-  pointer-events: none;
+}
+
+.swatch-hex-black {
+  color: #000;
 }
 
 .labels-hidden .meta {
@@ -282,13 +293,14 @@ body {
 
 .hex-row {
   display: flex;
-  align-items: center;
+  flex-wrap: wrap;
+  align-items: flex-start;
   gap: 6px;
   margin-bottom: 4px;
 }
 
 .hex {
-  flex: 1;
+  flex: 1 1 100%;
   min-width: 0;
   margin: 0;
   font-weight: 700;
@@ -296,7 +308,13 @@ body {
   word-break: break-word;
 }
 
-.copy-hex-btn {
+.hex-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.copy-hex-btn,
+.share-color-btn {
   flex: 0 0 auto;
   padding: 2px 6px;
   border: 1px solid #ccc;
@@ -308,7 +326,8 @@ body {
   cursor: pointer;
 }
 
-.copy-hex-btn:hover {
+.copy-hex-btn:hover,
+.share-color-btn:hover {
   color: var(--text);
 }
 

@@ -60,12 +60,18 @@
     <template id="tileTemplate">
       <article class="tile" data-color-date="">
         <div class="swatch">
-          <span class="swatch-hex" aria-hidden="true"></span>
+          <span class="swatch-hex" aria-hidden="true">
+            <span class="swatch-hex-white"></span>
+            <span class="swatch-hex-black"></span>
+          </span>
         </div>
         <div class="meta">
           <div class="hex-row">
             <p class="hex"></p>
-            <button type="button" class="copy-hex-btn">Copy</button>
+            <div class="hex-actions">
+              <button type="button" class="copy-hex-btn">Copy</button>
+              <button type="button" class="share-color-btn">Share</button>
+            </div>
           </div>
           <p class="date"></p>
           <p class="likes"></p>
