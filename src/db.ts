@@ -98,7 +98,7 @@ export function normalizeName(raw: unknown) {
   if (raw == null) return null
   const name = String(raw).trim()
   if (!name) return null
-  if (name.length > 40) return name.slice(0, 40)
+  if (name.length > 30) return name.slice(0, 30)
   return name
 }
 
