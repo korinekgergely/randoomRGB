@@ -17,9 +17,11 @@ const CLIENT_KEY_STORAGE = 'colorWallClientKey'
 const TILE_SIZE_STORAGE = 'colorWallTileSize'
 const LABELS_HIDDEN_STORAGE = 'colorWallLabelsHidden'
 const MESSAGE_HIDE_MS = 30000
-const TILE_SIZE_MIN = 120
+const TILE_SIZE_MIN = 20
 const TILE_SIZE_MAX = 280
 const TILE_SIZE_DEFAULT = 120
+const TILE_SIZE_LABELS_THRESHOLD = TILE_SIZE_DEFAULT
+const MOBILE_TILE_COLUMNS = 6
 
 let allColors = []
 const messageTimers = new WeakMap()
@@ -159,20 +161,39 @@ async function copyShareUrl(colorDate, button) {
   await copyToClipboard(buildColorShareUrl(colorDate), button)
 }
 
-function syncLabelsToggleUi() {
-  const hidden = document.body.classList.contains('labels-hidden')
-  labelsToggle.textContent = hidden ? 'Show labels' : 'Hide labels'
-  labelsToggle.setAttribute('aria-pressed', hidden ? 'true' : 'false')
+function isMobileLayout() {
+  return window.matchMedia('(max-width: 480px)').matches
 }
 
-function setLabelsHidden(hidden) {
+function getMobileTileMax() {
+  const gap = Number.parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--gap')) || 10
+  return (window.innerWidth - 32 - (MOBILE_TILE_COLUMNS - 1) * gap) / MOBILE_TILE_COLUMNS
+}
+
+function getEffectiveTileSize() {
+  const sliderSize = Number(sizeSlider.value)
+  if (!isMobileLayout()) return sliderSize
+  return Math.min(sliderSize, getMobileTileMax())
+}
+
+function syncLabelsToggleUi() {
+  const hidden = document.body.classList.contains('labels-hidden')
+  const forcedBySize = getEffectiveTileSize() < TILE_SIZE_LABELS_THRESHOLD
+  labelsToggle.textContent = hidden ? 'Show labels' : 'Hide labels'
+  labelsToggle.setAttribute('aria-pressed', hidden ? 'true' : 'false')
+  labelsToggle.disabled = forcedBySize
+}
+
+function applyLabelsState() {
+  const userHidden = localStorage.getItem(LABELS_HIDDEN_STORAGE) === '1'
+  const hidden = getEffectiveTileSize() < TILE_SIZE_LABELS_THRESHOLD || userHidden
   document.body.classList.toggle('labels-hidden', hidden)
-  localStorage.setItem(LABELS_HIDDEN_STORAGE, hidden ? '1' : '0')
   syncLabelsToggleUi()
 }
 
-function loadLabelsHidden() {
-  setLabelsHidden(localStorage.getItem(LABELS_HIDDEN_STORAGE) === '1')
+function setLabelsHidden(hidden) {
+  localStorage.setItem(LABELS_HIDDEN_STORAGE, hidden ? '1' : '0')
+  applyLabelsState()
 }
 
 function hasActiveFilters() {
@@ -468,13 +489,17 @@ colorImmersiveEl.addEventListener('click', exitColorImmersive)
 sizeSlider.addEventListener('input', () => {
   setTileSize(Number(sizeSlider.value))
   saveTileSize()
+  applyLabelsState()
 })
 
 labelsToggle.addEventListener('click', () => {
-  setLabelsHidden(!document.body.classList.contains('labels-hidden'))
+  setLabelsHidden(localStorage.getItem(LABELS_HIDDEN_STORAGE) !== '1')
 })
 
+window.matchMedia('(max-width: 480px)').addEventListener('change', applyLabelsState)
+window.addEventListener('resize', applyLabelsState)
+
 loadTileSize()
-loadLabelsHidden()
+applyLabelsState()
 updateFilterUi()
 loadWall()

@@ -200,6 +200,7 @@ body {
 }
 
 .tile {
+  container-type: inline-size;
   flex: 1 1 min(var(--tile-size), 100%);
   width: min(var(--tile-size), 100%);
   max-width: min(var(--tile-size), 100%);
@@ -236,7 +237,7 @@ body {
 .swatch-hex-black {
   font-weight: 700;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: clamp(0.6rem, 2.5vw, 0.85rem);
+  font-size: clamp(0.45rem, 14cqi, 0.85rem);
   line-height: 1.1;
   text-align: center;
 }
@@ -271,6 +272,12 @@ body.color-immersive {
   display: flex;
 }
 
+@container (max-width: 64px) {
+  .labels-hidden .swatch-hex {
+    display: none;
+  }
+}
+
 .labels-toggle {
   padding: 6px 10px;
   border: 1px solid #ccc;
@@ -286,6 +293,11 @@ body.color-immersive {
   background: #222;
   border-color: #222;
   color: #fff;
+}
+
+.labels-toggle:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 .meta {
@@ -412,10 +424,14 @@ body.color-immersive {
 }
 
 @media (max-width: 480px) {
+  .size-control {
+    display: none;
+  }
+
   .tile {
-    flex: 1 1 min(var(--tile-size), 33%);
-    width: min(var(--tile-size), 33%);
-    max-width: min(var(--tile-size), 33%);
+    flex: 1 1 min(var(--tile-size), calc((100% - 5 * var(--gap)) / 6));
+    width: min(var(--tile-size), calc((100% - 5 * var(--gap)) / 6));
+    max-width: min(var(--tile-size), calc((100% - 5 * var(--gap)) / 6));
   }
 
   .brand {
@@ -428,7 +444,6 @@ body.color-immersive {
 
   .filter-group,
   .filters,
-  .size-control,
   .labels-toggle {
     width: 100%;
   }
@@ -442,11 +457,5 @@ body.color-immersive {
   #filterName {
     flex: 1;
     width: 100%;
-  }
-
-  .size-control input[type='range'] {
-    flex: 1;
-    min-width: 0;
-    width: auto;
   }
 }
