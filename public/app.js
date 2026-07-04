@@ -17,6 +17,7 @@ const CLIENT_KEY_STORAGE = 'colorWallClientKey'
 const TILE_SIZE_STORAGE = 'colorWallTileSize'
 const LABELS_HIDDEN_STORAGE = 'colorWallLabelsHidden'
 const MESSAGE_HIDE_MS = 30000
+const ACTION_FEEDBACK_MS = 10000
 const TILE_SIZE_MIN = 20
 const TILE_SIZE_MAX = 280
 const TILE_SIZE_DEFAULT = 120
@@ -24,6 +25,7 @@ const TILE_SIZE_LABELS_THRESHOLD = TILE_SIZE_DEFAULT
 
 let allColors = []
 const messageTimers = new WeakMap()
+const actionFeedbackTimers = new WeakMap()
 
 function hideMessage(el) {
   const timer = messageTimers.get(el)
@@ -129,19 +131,30 @@ function saveTileSize() {
   localStorage.setItem(TILE_SIZE_STORAGE, sizeSlider.value)
 }
 
-async function copyToClipboard(text, button, failLabel = 'Failed') {
+function showActionFeedback(button, type) {
+  const existing = actionFeedbackTimers.get(button)
+  if (existing) window.clearTimeout(existing)
+
   const originalLabel = button.getAttribute('aria-label') ?? ''
+  button.classList.remove('hex-action-btn--success', 'hex-action-btn--error')
+  button.classList.add(type === 'success' ? 'hex-action-btn--success' : 'hex-action-btn--error')
+  button.setAttribute('aria-label', type === 'success' ? 'Copied!' : 'Failed')
+
+  const timer = window.setTimeout(() => {
+    button.classList.remove('hex-action-btn--success', 'hex-action-btn--error')
+    button.setAttribute('aria-label', originalLabel)
+    actionFeedbackTimers.delete(button)
+  }, ACTION_FEEDBACK_MS)
+
+  actionFeedbackTimers.set(button, timer)
+}
+
+async function copyToClipboard(text, button) {
   try {
     await navigator.clipboard.writeText(text)
-    button.setAttribute('aria-label', 'Copied!')
-    window.setTimeout(() => {
-      button.setAttribute('aria-label', originalLabel)
-    }, 1500)
+    showActionFeedback(button, 'success')
   } catch {
-    button.setAttribute('aria-label', failLabel)
-    window.setTimeout(() => {
-      button.setAttribute('aria-label', originalLabel)
-    }, 1500)
+    showActionFeedback(button, 'error')
   }
 }
 
@@ -155,8 +168,31 @@ async function copyHexValue(hex, button) {
   await copyToClipboard(hex, button)
 }
 
-async function copyShareUrl(colorDate, button) {
-  await copyToClipboard(buildColorShareUrl(colorDate), button)
+function canUseNativeShare(data) {
+  if (!navigator.share) return false
+  if (typeof navigator.canShare === 'function') return navigator.canShare(data)
+  return true
+}
+
+async function shareColorUrl(color, button) {
+  const url = buildColorShareUrl(color.colorDate)
+  const shareData = {
+    title: 'randoomRGB',
+    text: `${color.hex} — ${color.colorDate}`,
+    url,
+  }
+
+  if (canUseNativeShare(shareData)) {
+    try {
+      await navigator.share(shareData)
+      showActionFeedback(button, 'success')
+      return
+    } catch (err) {
+      if (err?.name === 'AbortError') return
+    }
+  }
+
+  await copyToClipboard(url, button)
 }
 
 function isMobileLayout() {
@@ -358,7 +394,7 @@ function renderWall(colors) {
     swatchHexBlack.textContent = color.hex
     hexEl.innerHTML = renderHexHtml(color.hex, getHexQuery())
     copyHexBtn.addEventListener('click', () => copyHexValue(color.hex, copyHexBtn))
-    shareColorBtn.addEventListener('click', () => copyShareUrl(color.colorDate, shareColorBtn))
+    shareColorBtn.addEventListener('click', () => shareColorUrl(color, shareColorBtn))
     dateEl.textContent = formatDate(color.colorDate)
     likesEl.innerHTML = renderLikesHtml(color.likes, filterName.value.trim())
 

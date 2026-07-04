@@ -363,6 +363,20 @@ body.color-immersive {
   color: var(--text);
 }
 
+.copy-hex-btn.hex-action-btn--success,
+.share-color-btn.hex-action-btn--success {
+  background: #222;
+  border-color: #222;
+  color: #fff;
+}
+
+.copy-hex-btn.hex-action-btn--error,
+.share-color-btn.hex-action-btn--error {
+  background: #b00020;
+  border-color: #b00020;
+  color: #fff;
+}
+
 .date,
 .likes {
   color: var(--muted);
