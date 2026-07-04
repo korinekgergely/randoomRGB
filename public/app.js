@@ -373,10 +373,6 @@ function hasDateInUrl() {
   return Boolean(date && isValidIsoDate(date))
 }
 
-function updateSiteTitleState() {
-  siteTitle.classList.toggle('site-title--reset', hasDateInUrl())
-}
-
 function resetToDefaultView() {
   filterDate.value = ''
   filterHex.value = ''
@@ -387,7 +383,6 @@ function resetToDefaultView() {
   const url = new URL(window.location.href)
   url.search = ''
   window.history.replaceState(null, '', url)
-  updateSiteTitleState()
   updateToolbarUi()
   refreshWallDisplay()
 }
@@ -442,7 +437,6 @@ function syncDateToUrl() {
   if (filterDate.value) url.searchParams.set('date', filterDate.value)
   else url.searchParams.delete('date')
   window.history.replaceState(null, '', url)
-  updateSiteTitleState()
 }
 
 function applyDateFromUrl() {
@@ -586,10 +580,10 @@ filterForm.addEventListener('input', applyFilters)
 filterForm.addEventListener('change', applyFilters)
 filterClear.addEventListener('click', clearFilters)
 sortClear.addEventListener('click', clearSort)
-siteTitle.addEventListener('click', (event) => {
-  if (!hasDateInUrl()) return
+siteTitle.addEventListener('click', async (event) => {
   event.preventDefault()
-  resetToDefaultView()
+  if (hasDateInUrl()) resetToDefaultView()
+  await loadWall()
 })
 sortSelect.addEventListener('change', () => {
   saveSortMode()
@@ -644,5 +638,4 @@ loadTileSize()
 loadSortMode()
 applyLabelsState()
 updateToolbarUi()
-updateSiteTitleState()
 loadWall()
