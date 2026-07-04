@@ -4,6 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>randoomRGB</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" href="/favicon.ico" />
     <link rel="alternate" type="application/rss+xml" title="randoomRGB" href="/feed.xml" />
     <link rel="stylesheet" href="/style.css" />
   </head>
@@ -57,6 +59,13 @@
       </button>
     </header>
     <main id="wall" class="wall" aria-live="polite"></main>
+    <button
+      type="button"
+      id="colorImmersive"
+      class="color-immersive"
+      hidden
+      aria-label="Return to grid"
+    ></button>
     <template id="tileTemplate">
       <article class="tile" data-color-date="">
         <div class="swatch">

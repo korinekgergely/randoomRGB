@@ -11,6 +11,7 @@ const infoToggle = document.getElementById('infoToggle')
 const infoPanel = document.getElementById('infoPanel')
 const infoClose = document.getElementById('infoClose')
 const labelsToggle = document.getElementById('labelsToggle')
+const colorImmersiveEl = document.getElementById('colorImmersive')
 
 const CLIENT_KEY_STORAGE = 'colorWallClientKey'
 const TILE_SIZE_STORAGE = 'colorWallTileSize'
@@ -308,7 +309,19 @@ async function loadWall() {
   renderWall(allColors)
 }
 
+function exitColorImmersive() {
+  colorImmersiveEl.hidden = true
+  document.body.classList.remove('color-immersive')
+}
+
+function enterColorImmersive(hex) {
+  colorImmersiveEl.style.backgroundColor = hex
+  colorImmersiveEl.hidden = false
+  document.body.classList.add('color-immersive')
+}
+
 function renderWall(colors) {
+  exitColorImmersive()
   wallEl.replaceChildren()
 
   for (const color of colors) {
@@ -328,6 +341,7 @@ function renderWall(colors) {
 
     node.dataset.colorDate = color.colorDate
     swatch.style.backgroundColor = color.hex
+    swatch.addEventListener('click', () => enterColorImmersive(color.hex))
     swatchHexWhite.textContent = color.hex
     swatchHexBlack.textContent = color.hex
     hexEl.innerHTML = renderHexHtml(color.hex, getHexQuery())
@@ -446,8 +460,12 @@ document.addEventListener('click', (event) => {
 })
 
 document.addEventListener('keydown', (event) => {
-  if (event.key === 'Escape' && !infoPanel.hidden) closeInfoPanel()
+  if (event.key !== 'Escape') return
+  if (!infoPanel.hidden) closeInfoPanel()
+  else if (document.body.classList.contains('color-immersive')) exitColorImmersive()
 })
+
+colorImmersiveEl.addEventListener('click', exitColorImmersive)
 
 sizeSlider.addEventListener('input', () => {
   setTileSize(Number(sizeSlider.value))

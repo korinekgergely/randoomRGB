@@ -2,10 +2,12 @@ import {
   addLike,
   ensureDailyColor,
   fetchWall,
+  getFirstColorHex,
   normalizeClientKey,
   normalizeName,
   removeLike,
 } from './db'
+import { buildColorFaviconSvg, getDefaultFaviconHex } from './favicon'
 import { buildRssFeed } from './rss'
 
 const corsHeaders = {
@@ -92,6 +94,19 @@ export default {
 
     if (url.pathname.startsWith('/api/')) {
       return handleApi(request, env, url.pathname)
+    }
+
+    if (
+      request.method === 'GET' &&
+      (url.pathname === '/favicon.svg' || url.pathname === '/favicon.ico')
+    ) {
+      const hex = (await getFirstColorHex(env.DB)) ?? getDefaultFaviconHex()
+      return new Response(buildColorFaviconSvg(hex), {
+        headers: {
+          'Content-Type': 'image/svg+xml; charset=utf-8',
+          'Cache-Control': 'public, max-age=300',
+        },
+      })
     }
 
     if (

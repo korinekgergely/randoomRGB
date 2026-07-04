@@ -215,9 +215,9 @@ body {
   position: relative;
   width: 100%;
   aspect-ratio: 1;
-  pointer-events: none;
+  pointer-events: auto;
+  cursor: pointer;
   user-select: none;
-  touch-action: none;
 }
 
 .swatch-hex {
@@ -253,8 +253,18 @@ body {
   display: none;
 }
 
-.labels-hidden .swatch {
-  pointer-events: auto;
+.color-immersive {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  cursor: pointer;
+}
+
+body.color-immersive {
+  overflow: hidden;
 }
 
 .labels-hidden .tile:hover .swatch-hex,

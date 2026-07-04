@@ -105,6 +105,14 @@ export function normalizeClientKey(raw: unknown) {
   return key
 }
 
+export async function getFirstColorHex(db: D1Database): Promise<string | null> {
+  const row = await db
+    .prepare('SELECT hex FROM colors ORDER BY color_date ASC LIMIT 1')
+    .first<{ hex: string }>()
+
+  return row?.hex ?? null
+}
+
 export async function addLike(
   db: D1Database,
   colorId: number,
