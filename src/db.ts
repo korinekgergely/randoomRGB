@@ -1,3 +1,5 @@
+import { isValidHex } from './hex'
+
 function randomHexColor() {
   const r = Math.floor(Math.random() * 256)
   const g = Math.floor(Math.random() * 256)
@@ -38,6 +40,7 @@ export async function ensureDailyColor(db: D1Database) {
 
   for (let attempt = 0; attempt < 64; attempt++) {
     const hex = randomHexColor()
+    if (!isValidHex(hex)) continue
     try {
       await db
         .prepare('INSERT INTO colors (hex, color_date) VALUES (?, ?)')
