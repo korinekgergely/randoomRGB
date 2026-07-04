@@ -21,7 +21,7 @@ const TILE_SIZE_MIN = 20
 const TILE_SIZE_MAX = 280
 const TILE_SIZE_DEFAULT = 120
 const TILE_SIZE_LABELS_THRESHOLD = TILE_SIZE_DEFAULT
-const MOBILE_TILE_COLUMNS = 6
+const MOBILE_TILE_COLUMNS = 3
 
 let allColors = []
 const messageTimers = new WeakMap()

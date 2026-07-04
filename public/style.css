@@ -424,14 +424,10 @@ body.color-immersive {
 }
 
 @media (max-width: 480px) {
-  .size-control {
-    display: none;
-  }
-
   .tile {
-    flex: 1 1 min(var(--tile-size), calc((100% - 5 * var(--gap)) / 6));
-    width: min(var(--tile-size), calc((100% - 5 * var(--gap)) / 6));
-    max-width: min(var(--tile-size), calc((100% - 5 * var(--gap)) / 6));
+    flex: 1 1 min(var(--tile-size), calc((100% - 2 * var(--gap)) / 3));
+    width: min(var(--tile-size), calc((100% - 2 * var(--gap)) / 3));
+    max-width: min(var(--tile-size), calc((100% - 2 * var(--gap)) / 3));
   }
 
   .brand {
@@ -444,6 +440,7 @@ body.color-immersive {
 
   .filter-group,
   .filters,
+  .size-control,
   .labels-toggle {
     width: 100%;
   }
@@ -457,5 +454,11 @@ body.color-immersive {
   #filterName {
     flex: 1;
     width: 100%;
+  }
+
+  .size-control input[type='range'] {
+    flex: 1;
+    min-width: 0;
+    width: auto;
   }
 }
