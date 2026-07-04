@@ -338,15 +338,24 @@ body.color-immersive {
 
 .copy-hex-btn,
 .share-color-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   flex: 0 0 auto;
-  padding: 2px 6px;
+  width: 1.5rem;
+  height: 1.5rem;
+  padding: 0;
   border: 1px solid #ccc;
   border-radius: 4px;
   background: #fff;
   color: var(--muted);
-  font: inherit;
-  font-size: 0.7rem;
   cursor: pointer;
+}
+
+.copy-hex-btn svg,
+.share-color-btn svg {
+  width: 0.85rem;
+  height: 0.85rem;
 }
 
 .copy-hex-btn:hover,

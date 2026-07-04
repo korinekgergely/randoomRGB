@@ -130,18 +130,17 @@ function saveTileSize() {
 }
 
 async function copyToClipboard(text, button, failLabel = 'Failed') {
+  const originalLabel = button.getAttribute('aria-label') ?? ''
   try {
     await navigator.clipboard.writeText(text)
-    const original = button.textContent
-    button.textContent = 'Copied!'
+    button.setAttribute('aria-label', 'Copied!')
     window.setTimeout(() => {
-      button.textContent = original
+      button.setAttribute('aria-label', originalLabel)
     }, 1500)
   } catch {
-    const original = button.textContent
-    button.textContent = failLabel
+    button.setAttribute('aria-label', failLabel)
     window.setTimeout(() => {
-      button.textContent = original
+      button.setAttribute('aria-label', originalLabel)
     }, 1500)
   }
 }
