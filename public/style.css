@@ -5,6 +5,9 @@
   --muted: #555;
   --bg: #f4f4f4;
   --surface: #fff;
+  /* Toolbar panels: set both to var(--surface) to disable block tint */
+  --panel-filter: #fafafa;
+  --panel-sort: #f3f3f3;
 }
 
 * {
@@ -131,8 +134,12 @@ body {
 
 .sort-group {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 10px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: var(--panel-sort);
   font-size: 0.9rem;
 }
 
@@ -186,6 +193,9 @@ body {
   flex-wrap: wrap;
   align-items: center;
   gap: 10px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: var(--panel-filter);
   font-size: 0.9rem;
 }
 
@@ -511,6 +521,16 @@ body.color-immersive {
   .size-control,
   .labels-toggle {
     width: 100%;
+  }
+
+  .filter-group {
+    padding: 10px 12px;
+    background: #f6f6f6;
+  }
+
+  .sort-group {
+    padding: 10px 12px;
+    background: #ededed;
   }
 
   .sort-field {
