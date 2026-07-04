@@ -1,11 +1,11 @@
-export function randomHexColor() {
+function randomHexColor() {
   const r = Math.floor(Math.random() * 256)
   const g = Math.floor(Math.random() * 256)
   const b = Math.floor(Math.random() * 256)
   return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`.toUpperCase()
 }
 
-export function getBudapestNow(date = new Date()) {
+function getBudapestNow(date = new Date()) {
   const formatter = new Intl.DateTimeFormat('en-GB', {
     timeZone: 'Europe/Budapest',
     year: 'numeric',
