@@ -137,6 +137,18 @@ body {
   font-size: 0.9rem;
 }
 
+.filter-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.9rem;
+}
+
+.filter-group-label {
+  font-weight: 600;
+}
+
 .filter-field {
   display: flex;
   align-items: center;
@@ -378,6 +390,7 @@ body {
     width: auto;
   }
 
+  .filter-group,
   .filters,
   .size-control,
   .labels-toggle {

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en-GB">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -29,10 +29,12 @@
         </div>
         <a class="rss-link" href="/feed.xml">RSS feed</a>
       </div>
-      <form class="filters" id="filterForm">
+      <div class="filter-group">
+        <span class="filter-group-label">Filter</span>
+        <form class="filters" id="filterForm">
         <label class="filter-field">
           <span>Date</span>
-          <input id="filterDate" type="date" />
+          <input id="filterDate" type="date" lang="en-GB" placeholder="YYYY-MM-DD" title="YYYY-MM-DD" />
         </label>
         <label class="filter-field">
           <span>Hex</span>
@@ -44,7 +46,8 @@
         </label>
         <button type="button" id="filterClear" hidden>Clear</button>
         <p class="filter-message" id="filterMessage" hidden></p>
-      </form>
+        </form>
+      </div>
       <label class="size-control">
         <span>Cell size</span>
         <input id="sizeSlider" type="range" min="120" max="280" value="120" />
