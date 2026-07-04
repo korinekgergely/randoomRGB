@@ -1,0 +1,24 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "daily-random-colour",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-03-01",
+  "observability": {
+    "enabled": true
+  },
+  "triggers": {
+    "crons": ["0 * * * *"]
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "daily-random-colour-db",
+      "database_id": "e1ca0e2f-31a2-445c-bbdc-46abbc3be3a6",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS"
+  }
+}

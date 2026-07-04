@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="hu">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Napi színfal</title>
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <header class="toolbar">
+      <h1>Napi színfal</h1>
+      <label class="size-control">
+        <span>Cella méret</span>
+        <input id="sizeSlider" type="range" min="72" max="220" value="120" />
+      </label>
+    </header>
+    <main id="wall" class="wall" aria-live="polite"></main>
+    <template id="tileTemplate">
+      <article class="tile">
+        <div class="swatch" aria-hidden="true"></div>
+        <div class="meta">
+          <p class="hex"></p>
+          <p class="date"></p>
+          <p class="likes"></p>
+          <form class="like-form">
+            <input type="text" name="name" maxlength="40" placeholder="Név (opcionális)" />
+            <button type="submit">Like</button>
+          </form>
+          <p class="like-error" hidden></p>
+        </div>
+      </article>
+    </template>
+    <script src="/app.js"></script>
+  </body>
+</html>

@@ -1,0 +1,17 @@
+{
+  "name": "daily-random-colour",
+  "private": true,
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:local": "wrangler d1 migrations apply daily-random-colour-db --local",
+    "db:remote": "wrangler d1 migrations apply daily-random-colour-db --remote",
+    "seed:local": "wrangler d1 execute daily-random-colour-db --local --command \"INSERT OR IGNORE INTO colors (hex, color_date) VALUES ('#A1B2C3', date('now'));\"",
+    "types": "wrangler types"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250317.0",
+    "typescript": "^5.8.2",
+    "wrangler": "^4.14.0"
+  }
+}
