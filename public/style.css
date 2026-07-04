@@ -8,6 +8,9 @@
   /* Toolbar panels: set both to var(--surface) to disable block tint */
   --panel-filter: #fafafa;
   --panel-sort: #f3f3f3;
+  --clear-bg: #e8f2ff;
+  --clear-border: #5b8fd9;
+  --clear-text: #1a56a8;
 }
 
 * {
@@ -170,7 +173,7 @@ body {
   outline-offset: 1px;
 }
 
-.sort-group button {
+.sort-group button:not(.panel-clear) {
   padding: 6px 10px;
   border: 1px solid #ccc;
   border-radius: 6px;
@@ -178,6 +181,28 @@ body {
   color: var(--text);
   font: inherit;
   cursor: pointer;
+}
+
+.panel-clear {
+  margin-left: auto;
+  flex: 0 0 auto;
+  padding: 6px 12px;
+  border: 1px solid var(--clear-border);
+  border-radius: 6px;
+  background: var(--clear-bg);
+  color: var(--clear-text);
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.panel-clear:hover {
+  background: #d6e8ff;
+}
+
+.panel-clear:focus-visible {
+  outline: 2px solid var(--clear-border);
+  outline-offset: 1px;
 }
 
 .filters {
@@ -226,7 +251,7 @@ body {
   width: 9rem;
 }
 
-.filters button {
+.filters button:not(.panel-clear) {
   padding: 6px 10px;
   border: 1px solid #ccc;
   border-radius: 6px;
@@ -531,6 +556,11 @@ body.color-immersive {
   .sort-group {
     padding: 10px 12px;
     background: #ededed;
+  }
+
+  .panel-clear {
+    margin-left: auto;
+    align-self: flex-end;
   }
 
   .sort-field {
