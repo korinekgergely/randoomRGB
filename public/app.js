@@ -10,9 +10,15 @@ const filterMessage = document.getElementById('filterMessage')
 const infoToggle = document.getElementById('infoToggle')
 const infoPanel = document.getElementById('infoPanel')
 const infoClose = document.getElementById('infoClose')
+const labelsToggle = document.getElementById('labelsToggle')
 
 const CLIENT_KEY_STORAGE = 'colorWallClientKey'
+const TILE_SIZE_STORAGE = 'colorWallTileSize'
+const LABELS_HIDDEN_STORAGE = 'colorWallLabelsHidden'
 const MESSAGE_HIDE_MS = 30000
+const TILE_SIZE_MIN = 120
+const TILE_SIZE_MAX = 280
+const TILE_SIZE_DEFAULT = 120
 
 let allColors = []
 const messageTimers = new WeakMap()
@@ -99,6 +105,60 @@ function setTileSize(px) {
   document.documentElement.style.setProperty('--tile-size', `${px}px`)
 }
 
+function loadTileSize() {
+  const stored = Number(localStorage.getItem(TILE_SIZE_STORAGE))
+  const size = Number.isFinite(stored)
+    ? Math.min(TILE_SIZE_MAX, Math.max(TILE_SIZE_MIN, stored))
+    : TILE_SIZE_DEFAULT
+  sizeSlider.value = String(size)
+  setTileSize(size)
+}
+
+function saveTileSize() {
+  localStorage.setItem(TILE_SIZE_STORAGE, sizeSlider.value)
+}
+
+async function copyHexValue(hex, button) {
+  try {
+    await navigator.clipboard.writeText(hex)
+    const original = button.textContent
+    button.textContent = 'Copied!'
+    window.setTimeout(() => {
+      button.textContent = original
+    }, 1500)
+  } catch {
+    button.textContent = 'Failed'
+    window.setTimeout(() => {
+      button.textContent = 'Copy'
+    }, 1500)
+  }
+}
+
+function syncLabelsToggleUi() {
+  const hidden = document.body.classList.contains('labels-hidden')
+  labelsToggle.textContent = hidden ? 'Show labels' : 'Hide labels'
+  labelsToggle.setAttribute('aria-pressed', hidden ? 'true' : 'false')
+}
+
+function syncTileLabelAccess() {
+  const hidden = document.body.classList.contains('labels-hidden')
+  for (const tile of wallEl.querySelectorAll('.tile')) {
+    if (hidden) tile.setAttribute('tabindex', '0')
+    else tile.removeAttribute('tabindex')
+  }
+}
+
+function setLabelsHidden(hidden) {
+  document.body.classList.toggle('labels-hidden', hidden)
+  localStorage.setItem(LABELS_HIDDEN_STORAGE, hidden ? '1' : '0')
+  syncLabelsToggleUi()
+  syncTileLabelAccess()
+}
+
+function loadLabelsHidden() {
+  setLabelsHidden(localStorage.getItem(LABELS_HIDDEN_STORAGE) === '1')
+}
+
 function hasActiveFilters() {
   return Boolean(filterDate.value || filterHex.value.trim() || filterName.value.trim())
 }
@@ -162,6 +222,7 @@ function applyFilters() {
 
   updateFilterUi()
   renderWall(filtered)
+  syncDateToUrl()
 }
 
 function clearFilters() {
@@ -170,6 +231,7 @@ function clearFilters() {
   filterName.value = ''
   clearFilterMessage()
   updateFilterUi()
+  syncDateToUrl()
   renderWall(allColors)
 }
 
@@ -187,7 +249,32 @@ function updateDateFilterBounds() {
 
   if (filterDate.value && filterDate.value < firstDate) {
     filterDate.value = ''
+    syncDateToUrl()
   }
+}
+
+function isValidIsoDate(value) {
+  return /^\d{4}-\d{2}-\d{2}$/.test(value)
+}
+
+function readDateFromUrl() {
+  const date = new URLSearchParams(window.location.search).get('date')
+  if (!date || !isValidIsoDate(date)) return ''
+  if (filterDate.min && date < filterDate.min) return ''
+  return date
+}
+
+function syncDateToUrl() {
+  const url = new URL(window.location.href)
+  if (filterDate.value) url.searchParams.set('date', filterDate.value)
+  else url.searchParams.delete('date')
+  window.history.replaceState(null, '', url)
+}
+
+function applyDateFromUrl() {
+  const date = readDateFromUrl()
+  if (!date) return
+  filterDate.value = date
 }
 
 async function loadWall() {
@@ -196,6 +283,7 @@ async function loadWall() {
   const data = await res.json()
   allColors = data.colors ?? []
   updateDateFilterBounds()
+  applyDateFromUrl()
 
   if (hasActiveFilters()) {
     applyFilters()
@@ -211,7 +299,9 @@ function renderWall(colors) {
   for (const color of colors) {
     const node = tileTemplate.content.firstElementChild.cloneNode(true)
     const swatch = node.querySelector('.swatch')
+    const swatchHex = node.querySelector('.swatch-hex')
     const hexEl = node.querySelector('.hex')
+    const copyHexBtn = node.querySelector('.copy-hex-btn')
     const dateEl = node.querySelector('.date')
     const likesEl = node.querySelector('.likes')
     const form = node.querySelector('.like-form')
@@ -221,7 +311,9 @@ function renderWall(colors) {
 
     node.dataset.colorDate = color.colorDate
     swatch.style.backgroundColor = color.hex
+    swatchHex.textContent = color.hex
     hexEl.innerHTML = renderHexHtml(color.hex, getHexQuery())
+    copyHexBtn.addEventListener('click', () => copyHexValue(color.hex, copyHexBtn))
     dateEl.textContent = formatDate(color.colorDate)
     likesEl.innerHTML = renderLikesHtml(color.likes, filterName.value.trim())
 
@@ -303,6 +395,8 @@ function renderWall(colors) {
 
     wallEl.appendChild(node)
   }
+
+  syncTileLabelAccess()
 }
 
 filterForm.addEventListener('input', applyFilters)
@@ -338,8 +432,14 @@ document.addEventListener('keydown', (event) => {
 
 sizeSlider.addEventListener('input', () => {
   setTileSize(Number(sizeSlider.value))
+  saveTileSize()
 })
 
-setTileSize(Number(sizeSlider.value))
+labelsToggle.addEventListener('click', () => {
+  setLabelsHidden(!document.body.classList.contains('labels-hidden'))
+})
+
+loadTileSize()
+loadLabelsHidden()
 updateFilterUi()
 loadWall()

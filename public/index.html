@@ -49,13 +49,21 @@
         <span>Cell size</span>
         <input id="sizeSlider" type="range" min="120" max="280" value="120" />
       </label>
+      <button type="button" id="labelsToggle" class="labels-toggle" aria-pressed="false">
+        Hide labels
+      </button>
     </header>
     <main id="wall" class="wall" aria-live="polite"></main>
     <template id="tileTemplate">
       <article class="tile" data-color-date="">
-        <div class="swatch" aria-hidden="true"></div>
+        <div class="swatch">
+          <span class="swatch-hex" aria-hidden="true"></span>
+        </div>
         <div class="meta">
-          <p class="hex"></p>
+          <div class="hex-row">
+            <p class="hex"></p>
+            <button type="button" class="copy-hex-btn">Copy</button>
+          </div>
           <p class="date"></p>
           <p class="likes"></p>
           <form class="like-form">
