@@ -9,14 +9,30 @@
   <body>
     <header class="toolbar">
       <h1>randoomRGB</h1>
+      <form class="filters" id="filterForm">
+        <label class="filter-field">
+          <span>Date</span>
+          <input id="filterDate" type="date" />
+        </label>
+        <label class="filter-field">
+          <span>Hex</span>
+          <input id="filterHex" type="text" maxlength="7" placeholder="#RRGGBB" />
+        </label>
+        <label class="filter-field">
+          <span>Name</span>
+          <input id="filterName" type="text" maxlength="40" placeholder="Liker name" />
+        </label>
+        <button type="button" id="filterClear" hidden>Clear</button>
+        <p class="filter-message" id="filterMessage" hidden></p>
+      </form>
       <label class="size-control">
         <span>Cell size</span>
-        <input id="sizeSlider" type="range" min="72" max="220" value="120" />
+        <input id="sizeSlider" type="range" min="120" max="280" value="120" />
       </label>
     </header>
     <main id="wall" class="wall" aria-live="polite"></main>
     <template id="tileTemplate">
-      <article class="tile">
+      <article class="tile" data-color-date="">
         <div class="swatch" aria-hidden="true"></div>
         <div class="meta">
           <p class="hex"></p>
