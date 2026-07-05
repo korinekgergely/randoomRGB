@@ -536,6 +536,28 @@ body.color-immersive {
 }
 
 @media (max-width: 480px) {
+  body {
+    padding-top: var(--toolbar-offset, 0px);
+    transition: padding-top 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .toolbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 2;
+    transition:
+      transform 0.28s cubic-bezier(0.4, 0, 0.2, 1),
+      opacity 0.22s ease;
+  }
+
+  body.toolbar-hidden .toolbar {
+    transform: translateY(-100%);
+    opacity: 0;
+    pointer-events: none;
+  }
+
   .tile {
     flex: 1 1 min(var(--tile-size), calc((100% - 2 * var(--gap)) / 3));
     width: min(var(--tile-size), calc((100% - 2 * var(--gap)) / 3));

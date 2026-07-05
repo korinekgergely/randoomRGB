@@ -14,6 +14,7 @@ const labelsToggle = document.getElementById('labelsToggle')
 const sortSelect = document.getElementById('sortSelect')
 const sortClear = document.getElementById('sortClear')
 const siteTitle = document.getElementById('siteTitle')
+const toolbarEl = document.querySelector('.toolbar')
 const colorImmersiveEl = document.getElementById('colorImmersive')
 
 const CLIENT_KEY_STORAGE = 'colorWallClientKey'
@@ -26,8 +27,9 @@ const MESSAGE_HIDE_MS = 30000
 const ACTION_FEEDBACK_MS = 10000
 const TILE_SIZE_MIN = 20
 const TILE_SIZE_MAX = 280
-const TILE_SIZE_DEFAULT = 120
-const TILE_SIZE_LABELS_THRESHOLD = TILE_SIZE_DEFAULT
+const TILE_SIZE_DEFAULT = TILE_SIZE_MAX
+const TILE_SIZE_LABELS_THRESHOLD = 120
+const TOOLBAR_SCROLL_DELTA = 6
 
 let allColors = []
 const messageTimers = new WeakMap()
@@ -368,23 +370,9 @@ function applyFilters() {
   syncDateToUrl()
 }
 
-function hasDateInUrl() {
-  const date = new URLSearchParams(window.location.search).get('date')
-  return Boolean(date && isValidIsoDate(date))
-}
-
 function resetToDefaultView() {
-  filterDate.value = ''
-  filterHex.value = ''
-  filterName.value = ''
-  sortSelect.value = SORT_DEFAULT
-  saveSortMode()
-  clearFilterMessage()
-  const url = new URL(window.location.href)
-  url.search = ''
-  window.history.replaceState(null, '', url)
-  updateToolbarUi()
-  refreshWallDisplay()
+  localStorage.setItem(SORT_STORAGE, SORT_DEFAULT)
+  window.location.href = window.location.origin + window.location.pathname
 }
 
 function clearSort() {
@@ -580,10 +568,9 @@ filterForm.addEventListener('input', applyFilters)
 filterForm.addEventListener('change', applyFilters)
 filterClear.addEventListener('click', clearFilters)
 sortClear.addEventListener('click', clearSort)
-siteTitle.addEventListener('click', async (event) => {
+siteTitle.addEventListener('click', (event) => {
   event.preventDefault()
-  if (hasDateInUrl()) resetToDefaultView()
-  await loadWall()
+  resetToDefaultView()
 })
 sortSelect.addEventListener('change', () => {
   saveSortMode()
@@ -634,8 +621,60 @@ labelsToggle.addEventListener('click', () => {
 window.matchMedia('(max-width: 480px)').addEventListener('change', applyLabelsState)
 window.addEventListener('resize', applyLabelsState)
 
+const mobileToolbarMq = window.matchMedia('(max-width: 480px)')
+let lastScrollY = 0
+let toolbarHidden = false
+
+function syncToolbarLayout() {
+  if (!mobileToolbarMq.matches) {
+    document.body.classList.remove('toolbar-hidden')
+    toolbarHidden = false
+    document.documentElement.style.removeProperty('--toolbar-offset')
+    return
+  }
+
+  if (!toolbarHidden) {
+    document.documentElement.style.setProperty('--toolbar-offset', `${toolbarEl.offsetHeight}px`)
+  }
+}
+
+function setToolbarHidden(hidden) {
+  if (!mobileToolbarMq.matches) return
+  if (toolbarHidden === hidden) return
+  toolbarHidden = hidden
+  document.body.classList.toggle('toolbar-hidden', hidden)
+  document.documentElement.style.setProperty('--toolbar-offset', hidden ? '0px' : `${toolbarEl.offsetHeight}px`)
+}
+
+function handleToolbarScroll() {
+  if (!mobileToolbarMq.matches) return
+  if (document.body.classList.contains('color-immersive')) return
+
+  const y = window.scrollY
+  if (y <= 4) {
+    setToolbarHidden(false)
+    lastScrollY = y
+    return
+  }
+
+  const delta = y - lastScrollY
+  if (delta > TOOLBAR_SCROLL_DELTA) setToolbarHidden(true)
+  else if (delta < -TOOLBAR_SCROLL_DELTA) setToolbarHidden(false)
+
+  lastScrollY = y
+}
+
+window.addEventListener('scroll', handleToolbarScroll, { passive: true })
+mobileToolbarMq.addEventListener('change', () => {
+  lastScrollY = window.scrollY
+  syncToolbarLayout()
+})
+window.addEventListener('resize', syncToolbarLayout)
+new ResizeObserver(syncToolbarLayout).observe(toolbarEl)
+
 loadTileSize()
 loadSortMode()
 applyLabelsState()
 updateToolbarUi()
+syncToolbarLayout()
 loadWall()
