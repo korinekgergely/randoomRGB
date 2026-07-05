@@ -104,7 +104,7 @@ export default {
       return new Response(buildColorFaviconSvg(hex), {
         headers: {
           'Content-Type': 'image/svg+xml; charset=utf-8',
-          'Cache-Control': 'public, max-age=300',
+          'Cache-Control': 'public, max-age=60, must-revalidate',
         },
       })
     }

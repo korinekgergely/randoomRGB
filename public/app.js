@@ -123,6 +123,21 @@ function formatDate(isoDate) {
   return isoDate
 }
 
+function buildFaviconDataUrl(hex) {
+  const fill = /^#[0-9A-F]{6}$/.test(hex) ? hex : '#f4f4f4'
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" fill="${fill}"/></svg>`
+  return `data:image/svg+xml,${encodeURIComponent(svg)}`
+}
+
+function updatePageFavicon() {
+  const latest = allColors[0]
+  if (!latest) return
+  const href = buildFaviconDataUrl(latest.hex)
+  for (const link of document.querySelectorAll('link[rel="icon"]')) {
+    link.href = href
+  }
+}
+
 function setTileSize(px) {
   document.documentElement.style.setProperty('--tile-size', `${px}px`)
 }
@@ -439,6 +454,7 @@ async function loadWall() {
   const res = await fetch(`/api/wall?clientKey=${encodeURIComponent(clientKey)}`)
   const data = await res.json()
   allColors = data.colors ?? []
+  updatePageFavicon()
   updateDateFilterBounds()
   applyDateFromUrl()
   refreshWallDisplay()
