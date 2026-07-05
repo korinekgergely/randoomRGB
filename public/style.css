@@ -535,10 +535,9 @@ body.color-immersive {
   margin-top: 4px;
 }
 
-@media (max-width: 480px) {
+@media (max-width: 857px) {
   body {
     padding-top: var(--toolbar-offset, 0px);
-    transition: padding-top 0.28s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .toolbar {
@@ -557,7 +556,9 @@ body.color-immersive {
     opacity: 0;
     pointer-events: none;
   }
+}
 
+@media (max-width: 480px) {
   .tile {
     flex: 1 1 min(var(--tile-size), calc((100% - 2 * var(--gap)) / 3));
     width: min(var(--tile-size), calc((100% - 2 * var(--gap)) / 3));

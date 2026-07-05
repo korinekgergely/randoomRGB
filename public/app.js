@@ -30,6 +30,7 @@ const TILE_SIZE_MAX = 280
 const TILE_SIZE_DEFAULT = TILE_SIZE_MAX
 const TILE_SIZE_LABELS_THRESHOLD = 120
 const TOOLBAR_SCROLL_DELTA = 6
+const TOOLBAR_AUTO_HIDE_MQ = '(max-width: 857px)'
 
 let allColors = []
 const messageTimers = new WeakMap()
@@ -621,9 +622,10 @@ labelsToggle.addEventListener('click', () => {
 window.matchMedia('(max-width: 480px)').addEventListener('change', applyLabelsState)
 window.addEventListener('resize', applyLabelsState)
 
-const mobileToolbarMq = window.matchMedia('(max-width: 480px)')
+const mobileToolbarMq = window.matchMedia(TOOLBAR_AUTO_HIDE_MQ)
 let lastScrollY = 0
 let toolbarHidden = false
+let toolbarScrollLock = false
 
 function syncToolbarLayout() {
   if (!mobileToolbarMq.matches) {
@@ -641,19 +643,35 @@ function syncToolbarLayout() {
 function setToolbarHidden(hidden) {
   if (!mobileToolbarMq.matches) return
   if (toolbarHidden === hidden) return
+
+  const height = toolbarEl.offsetHeight
+  const scrollY = window.scrollY
   toolbarHidden = hidden
   document.body.classList.toggle('toolbar-hidden', hidden)
-  document.documentElement.style.setProperty('--toolbar-offset', hidden ? '0px' : `${toolbarEl.offsetHeight}px`)
+  document.documentElement.style.setProperty('--toolbar-offset', hidden ? '0px' : `${height}px`)
+
+  if (hidden) {
+    window.scrollTo(0, Math.max(0, scrollY - height))
+  } else {
+    window.scrollTo(0, scrollY <= 4 ? 0 : scrollY + height)
+  }
+
+  lastScrollY = window.scrollY
+  toolbarScrollLock = true
+  window.setTimeout(() => {
+    toolbarScrollLock = false
+    lastScrollY = window.scrollY
+  }, 320)
 }
 
 function handleToolbarScroll() {
   if (!mobileToolbarMq.matches) return
+  if (toolbarScrollLock) return
   if (document.body.classList.contains('color-immersive')) return
 
   const y = window.scrollY
   if (y <= 4) {
     setToolbarHidden(false)
-    lastScrollY = y
     return
   }
 
