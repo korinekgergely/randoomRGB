@@ -69,6 +69,21 @@ function escapeHtml(text) {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
+function sanitizeDisplayName(raw) {
+  const namePart = /[\p{L}\p{N}']/u
+  let name = ''
+  for (const ch of raw.trim()) {
+    if (namePart.test(ch)) {
+      name += ch
+    } else if (ch === ' ' && name.length > 0 && !name.endsWith(' ')) {
+      name += ' '
+    }
+    if (name.length >= 30) break
+  }
+  return name.trim()
 }
 
 function highlightSubstring(text, query) {
@@ -522,7 +537,7 @@ function renderWall(colors) {
           body: JSON.stringify({
             colorId: color.id,
             clientKey: getClientKey(),
-            name: nameInput.value.trim() || null,
+            name: sanitizeDisplayName(nameInput.value) || null,
           }),
         })
 

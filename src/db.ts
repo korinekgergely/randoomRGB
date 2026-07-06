@@ -1,4 +1,7 @@
 import { isValidHex } from './hex'
+import { normalizeName } from './name'
+
+export { normalizeName }
 
 function randomHexColor() {
   const r = Math.floor(Math.random() * 256)
@@ -92,14 +95,6 @@ export async function fetchWall(db: D1Database, clientKey: string | null = null)
     likes: likesByColor.get(color.id) ?? [],
     likedByClient: clientKey ? likedColorIds.has(color.id) : undefined,
   }))
-}
-
-export function normalizeName(raw: unknown) {
-  if (raw == null) return null
-  const name = String(raw).trim()
-  if (!name) return null
-  if (name.length > 30) return name.slice(0, 30)
-  return name
 }
 
 export function normalizeClientKey(raw: unknown) {
