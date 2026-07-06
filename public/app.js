@@ -18,6 +18,7 @@ const toolbarEl = document.querySelector('.toolbar')
 const colorImmersiveEl = document.getElementById('colorImmersive')
 
 const CLIENT_KEY_STORAGE = 'colorWallClientKey'
+const LIKE_NAME_STORAGE = 'colorWallLikeName'
 const TILE_SIZE_STORAGE = 'colorWallTileSize'
 const LABELS_HIDDEN_STORAGE = 'colorWallLabelsHidden'
 const SORT_STORAGE = 'colorWallSortMode'
@@ -84,6 +85,18 @@ function sanitizeDisplayName(raw) {
     if (name.length >= 30) break
   }
   return name.trim()
+}
+
+function getSavedLikeName() {
+  const stored = localStorage.getItem(LIKE_NAME_STORAGE)
+  if (!stored) return ''
+  return sanitizeDisplayName(stored)
+}
+
+function saveLikeName(raw) {
+  const name = sanitizeDisplayName(raw)
+  if (!name) return
+  localStorage.setItem(LIKE_NAME_STORAGE, name)
 }
 
 function highlightSubstring(text, query) {
@@ -522,6 +535,8 @@ function renderWall(colors) {
     } else {
       form.hidden = false
       unlikeBtn.hidden = true
+      const savedName = getSavedLikeName()
+      if (savedName) nameInput.value = savedName
     }
 
     form.addEventListener('submit', async (event) => {
@@ -531,13 +546,14 @@ function renderWall(colors) {
       form.querySelector('button').disabled = true
 
       try {
+        const likedName = sanitizeDisplayName(nameInput.value)
         const response = await fetch('/api/like', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             colorId: color.id,
             clientKey: getClientKey(),
-            name: sanitizeDisplayName(nameInput.value) || null,
+            name: likedName || null,
           }),
         })
 
@@ -552,6 +568,7 @@ function renderWall(colors) {
           return
         }
 
+        if (likedName) saveLikeName(likedName)
         await loadWall()
       } catch {
         showTemporaryMessage(errorEl, 'Network error.')
