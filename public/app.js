@@ -29,7 +29,6 @@ const SORT_MODES = [
   'hex-desc',
   'likes-desc',
   'likes-asc',
-  'similar',
   'hue',
 ]
 const SORT_DEFAULT = 'date-desc'
@@ -373,75 +372,6 @@ function hexToOklab(hex) {
   return rgbToOklab(r, g, b)
 }
 
-function oklabDistance(a, b) {
-  return Math.hypot(a.L - b.L, a.a - b.a, a.b - b.b)
-}
-
-function buildNearestNeighborPath(items) {
-  const startIndex = items.reduce((bestIndex, item, index, list) => {
-    if (item.oklab.L !== list[bestIndex].oklab.L) {
-      return item.oklab.L < list[bestIndex].oklab.L ? index : bestIndex
-    }
-    return hexSortKey(item.color.hex) < hexSortKey(list[bestIndex].color.hex) ? index : bestIndex
-  }, 0)
-
-  const ordered = [items[startIndex]]
-  const remaining = items.filter((_, index) => index !== startIndex)
-
-  while (remaining.length) {
-    const last = ordered[ordered.length - 1]
-    let nearestIndex = 0
-    let nearestDistance = Infinity
-
-    for (let index = 0; index < remaining.length; index++) {
-      const distance = oklabDistance(last.oklab, remaining[index].oklab)
-      if (distance < nearestDistance) {
-        nearestDistance = distance
-        nearestIndex = index
-      }
-    }
-
-    ordered.push(remaining[nearestIndex])
-    remaining.splice(nearestIndex, 1)
-  }
-
-  return ordered
-}
-
-function improvePath2Opt(items) {
-  let improved = true
-
-  while (improved) {
-    improved = false
-
-    for (let i = 0; i < items.length - 2; i++) {
-      for (let j = i + 2; j < items.length; j++) {
-        const before =
-          oklabDistance(items[i].oklab, items[i + 1].oklab) +
-          (j + 1 < items.length ? oklabDistance(items[j].oklab, items[j + 1].oklab) : 0)
-        const after =
-          oklabDistance(items[i].oklab, items[j].oklab) +
-          (j + 1 < items.length ? oklabDistance(items[i + 1].oklab, items[j + 1].oklab) : 0)
-
-        if (after + 1e-12 < before) {
-          const reversed = items.slice(i + 1, j + 1).reverse()
-          items.splice(i + 1, j - i, ...reversed)
-          improved = true
-        }
-      }
-    }
-  }
-
-  return items
-}
-
-function sortBySimilarity(colors) {
-  if (colors.length <= 1) return colors
-
-  const items = colors.map((color) => ({ color, oklab: hexToOklab(color.hex) }))
-  return improvePath2Opt(buildNearestNeighborPath(items)).map((item) => item.color)
-}
-
 function sortByHue(colors) {
   const GRAY_CHROMA = 0.04
   const items = colors.map((color) => {
@@ -500,9 +430,6 @@ function sortColors(colors) {
       return diff !== 0 ? diff : b.colorDate.localeCompare(a.colorDate)
     })
     return sorted
-  }
-  if (mode === 'similar') {
-    return sortBySimilarity(sorted)
   }
   if (mode === 'hue') {
     return sortByHue(sorted)
