@@ -22,7 +22,16 @@ const LIKE_NAME_STORAGE = 'colorWallLikeName'
 const TILE_SIZE_STORAGE = 'colorWallTileSize'
 const LABELS_HIDDEN_STORAGE = 'colorWallLabelsHidden'
 const SORT_STORAGE = 'colorWallSortMode'
-const SORT_MODES = ['date-desc', 'date-asc', 'hex-asc', 'hex-desc', 'likes-desc', 'likes-asc', 'similar']
+const SORT_MODES = [
+  'date-desc',
+  'date-asc',
+  'hex-asc',
+  'hex-desc',
+  'likes-desc',
+  'likes-asc',
+  'similar',
+  'hue',
+]
 const SORT_DEFAULT = 'date-desc'
 const MESSAGE_HIDE_MS = 30000
 const ACTION_FEEDBACK_MS = 10000
@@ -332,46 +341,47 @@ function srgbChannelToLinear(channel) {
   return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4
 }
 
-function rgbToLab(r, g, b) {
+function rgbToOklab(r, g, b) {
   const rl = srgbChannelToLinear(r)
   const gl = srgbChannelToLinear(g)
   const bl = srgbChannelToLinear(b)
 
-  let x = rl * 0.4124564 + gl * 0.3575761 + bl * 0.1804375
-  let y = rl * 0.2126729 + gl * 0.7151522 + bl * 0.072175
-  let z = rl * 0.0193339 + gl * 0.119192 + bl * 0.9503041
+  const l = 0.4122214708 * rl + 0.5363325363 * gl + 0.0514459929 * bl
+  const m = 0.2119034982 * rl + 0.6806995451 * gl + 0.1073969566 * bl
+  const s = 0.0883024619 * rl + 0.2817188376 * gl + 0.6299787005 * bl
 
-  x /= 0.95047
-  z /= 1.08883
-
-  const convert = (value) =>
-    value > 0.008856 ? value ** (1 / 3) : 7.787 * value + 16 / 116
-
-  const fx = convert(x)
-  const fy = convert(y)
-  const fz = convert(z)
+  const lRoot = Math.cbrt(l)
+  const mRoot = Math.cbrt(m)
+  const sRoot = Math.cbrt(s)
 
   return {
-    l: 116 * fy - 16,
-    a: 500 * (fx - fy),
-    b: 200 * (fy - fz),
+    L: 0.2104542553 * lRoot + 0.793617785 * mRoot - 0.0040720468 * sRoot,
+    a: 1.9779984951 * lRoot - 2.428592205 * mRoot + 0.4505937099 * sRoot,
+    b: 0.0259040371 * lRoot + 0.7827717662 * mRoot - 0.808675766 * sRoot,
   }
 }
 
-function hexToLab(hex) {
+function oklabToOklch(oklab) {
+  const C = Math.hypot(oklab.a, oklab.b)
+  let H = (Math.atan2(oklab.b, oklab.a) * 180) / Math.PI
+  if (H < 0) H += 360
+  return { L: oklab.L, C, H }
+}
+
+function hexToOklab(hex) {
   const { r, g, b } = parseHexRgb(hex)
-  return rgbToLab(r, g, b)
+  return rgbToOklab(r, g, b)
 }
 
-function labDistance(a, b) {
-  return Math.hypot(a.l - b.l, a.a - b.a, a.b - b.b)
+function oklabDistance(a, b) {
+  return Math.hypot(a.L - b.L, a.a - b.a, a.b - b.b)
 }
 
-function sortBySimilarity(colors) {
-  if (colors.length <= 1) return colors
-
-  const items = colors.map((color) => ({ color, lab: hexToLab(color.hex) }))
+function buildNearestNeighborPath(items) {
   const startIndex = items.reduce((bestIndex, item, index, list) => {
+    if (item.oklab.L !== list[bestIndex].oklab.L) {
+      return item.oklab.L < list[bestIndex].oklab.L ? index : bestIndex
+    }
     return hexSortKey(item.color.hex) < hexSortKey(list[bestIndex].color.hex) ? index : bestIndex
   }, 0)
 
@@ -384,7 +394,7 @@ function sortBySimilarity(colors) {
     let nearestDistance = Infinity
 
     for (let index = 0; index < remaining.length; index++) {
-      const distance = labDistance(last.lab, remaining[index].lab)
+      const distance = oklabDistance(last.oklab, remaining[index].oklab)
       if (distance < nearestDistance) {
         nearestDistance = distance
         nearestIndex = index
@@ -395,7 +405,66 @@ function sortBySimilarity(colors) {
     remaining.splice(nearestIndex, 1)
   }
 
-  return ordered.map((item) => item.color)
+  return ordered
+}
+
+function improvePath2Opt(items) {
+  let improved = true
+
+  while (improved) {
+    improved = false
+
+    for (let i = 0; i < items.length - 2; i++) {
+      for (let j = i + 2; j < items.length; j++) {
+        const before =
+          oklabDistance(items[i].oklab, items[i + 1].oklab) +
+          (j + 1 < items.length ? oklabDistance(items[j].oklab, items[j + 1].oklab) : 0)
+        const after =
+          oklabDistance(items[i].oklab, items[j].oklab) +
+          (j + 1 < items.length ? oklabDistance(items[i + 1].oklab, items[j + 1].oklab) : 0)
+
+        if (after + 1e-12 < before) {
+          const reversed = items.slice(i + 1, j + 1).reverse()
+          items.splice(i + 1, j - i, ...reversed)
+          improved = true
+        }
+      }
+    }
+  }
+
+  return items
+}
+
+function sortBySimilarity(colors) {
+  if (colors.length <= 1) return colors
+
+  const items = colors.map((color) => ({ color, oklab: hexToOklab(color.hex) }))
+  return improvePath2Opt(buildNearestNeighborPath(items)).map((item) => item.color)
+}
+
+function sortByHue(colors) {
+  const GRAY_CHROMA = 0.04
+  const items = colors.map((color) => {
+    const oklab = hexToOklab(color.hex)
+    const oklch = oklabToOklch(oklab)
+    return { color, oklch, hexKey: hexSortKey(color.hex) }
+  })
+
+  items.sort((a, b) => {
+    const aGray = a.oklch.C < GRAY_CHROMA
+    const bGray = b.oklch.C < GRAY_CHROMA
+    if (aGray !== bGray) return aGray ? 1 : -1
+    if (aGray && bGray) {
+      if (a.oklch.L !== b.oklch.L) return a.oklch.L - b.oklch.L
+      return a.hexKey.localeCompare(b.hexKey)
+    }
+    if (a.oklch.H !== b.oklch.H) return a.oklch.H - b.oklch.H
+    if (a.oklch.C !== b.oklch.C) return b.oklch.C - a.oklch.C
+    if (a.oklch.L !== b.oklch.L) return b.oklch.L - a.oklch.L
+    return a.hexKey.localeCompare(b.hexKey)
+  })
+
+  return items.map((item) => item.color)
 }
 
 function likeCount(color) {
@@ -434,6 +503,9 @@ function sortColors(colors) {
   }
   if (mode === 'similar') {
     return sortBySimilarity(sorted)
+  }
+  if (mode === 'hue') {
+    return sortByHue(sorted)
   }
 
   sorted.sort((a, b) => b.colorDate.localeCompare(a.colorDate))
