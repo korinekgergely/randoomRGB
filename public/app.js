@@ -13,6 +13,8 @@ const infoClose = document.getElementById('infoClose')
 const labelsToggle = document.getElementById('labelsToggle')
 const sortSelect = document.getElementById('sortSelect')
 const sortClear = document.getElementById('sortClear')
+const colorSortSelect = document.getElementById('colorSortSelect')
+const colorSortClear = document.getElementById('colorSortClear')
 const siteTitle = document.getElementById('siteTitle')
 const toolbarEl = document.querySelector('.toolbar')
 const colorImmersiveEl = document.getElementById('colorImmersive')
@@ -22,19 +24,11 @@ const LIKE_NAME_STORAGE = 'colorWallLikeName'
 const TILE_SIZE_STORAGE = 'colorWallTileSize'
 const LABELS_HIDDEN_STORAGE = 'colorWallLabelsHidden'
 const SORT_STORAGE = 'colorWallSortMode'
-const SORT_MODES = [
-  'date-desc',
-  'date-asc',
-  'hex-asc',
-  'hex-desc',
-  'likes-desc',
-  'likes-asc',
-  'hue',
-  'lightness',
-  'chroma',
-  'warmth',
-]
+const COLOR_SORT_STORAGE = 'colorWallColorSortMode'
+const SORT_MODES = ['date-desc', 'date-asc', 'hex-asc', 'hex-desc', 'likes-desc', 'likes-asc']
+const COLOR_SORT_MODES = ['hue', 'lightness', 'chroma', 'warmth', 'seasonal', 'complement']
 const SORT_DEFAULT = 'date-desc'
+const COLOR_SORT_DEFAULT = ''
 const MESSAGE_HIDE_MS = 30000
 const ACTION_FEEDBACK_MS = 10000
 const TILE_SIZE_MIN = 20
@@ -446,12 +440,85 @@ function sortByWarmth(colors) {
   return items.map((item) => item.color)
 }
 
+function seasonBucket(oklch) {
+  const warm = warmthScore(oklch)
+  const { H, L, C } = oklch
+
+  if (H >= 85 && H < 165 && L >= 0.35) return 0
+  if (warm > 0.03 && L >= 0.55) return 1
+  if ((warm > 0.02 && L < 0.55) || H < 40 || H >= 330) return 2
+  if (H >= 180 && H < 300) return 3
+  if (C < 0.05) return L < 0.5 ? 3 : 0
+  return warm > 0 ? (L >= 0.55 ? 1 : 2) : 3
+}
+
+function sortBySeasonal(colors) {
+  const items = mapColorsWithOklch(colors)
+
+  items.sort((a, b) => {
+    const seasonA = seasonBucket(a.oklch)
+    const seasonB = seasonBucket(b.oklch)
+    if (seasonA !== seasonB) return seasonA - seasonB
+    if (seasonA === 0 || seasonA === 1) {
+      if (a.oklch.L !== b.oklch.L) return b.oklch.L - a.oklch.L
+    } else if (a.oklch.L !== b.oklch.L) {
+      return a.oklch.L - b.oklch.L
+    }
+    if (a.oklch.H !== b.oklch.H) return a.oklch.H - b.oklch.H
+    return a.hexKey.localeCompare(b.hexKey)
+  })
+
+  return items.map((item) => item.color)
+}
+
+function hueDistance(a, b) {
+  const delta = Math.abs(a - b) % 360
+  return Math.min(delta, 360 - delta)
+}
+
+function sortByComplementPairs(colors) {
+  if (colors.length <= 1) return colors
+
+  const remaining = mapColorsWithOklch(colors)
+  remaining.sort((a, b) => {
+    if (a.oklch.H !== b.oklch.H) return a.oklch.H - b.oklch.H
+    return a.hexKey.localeCompare(b.hexKey)
+  })
+
+  const ordered = []
+
+  while (remaining.length) {
+    const seed = remaining.shift()
+    ordered.push(seed)
+    if (!remaining.length) break
+
+    const targetHue = (seed.oklch.H + 180) % 360
+    let bestIndex = 0
+    let bestScore = Infinity
+
+    for (let index = 0; index < remaining.length; index++) {
+      const candidate = remaining[index]
+      const score =
+        hueDistance(candidate.oklch.H, targetHue) +
+        Math.abs(candidate.oklch.C - seed.oklch.C) * 50 +
+        Math.abs(candidate.oklch.L - (1 - seed.oklch.L)) * 15
+      if (score < bestScore) {
+        bestScore = score
+        bestIndex = index
+      }
+    }
+
+    ordered.push(remaining.splice(bestIndex, 1)[0])
+  }
+
+  return ordered.map((item) => item.color)
+}
+
 function likeCount(color) {
   return color.likes.length
 }
 
-function sortColors(colors) {
-  const mode = sortSelect.value
+function sortByGeneralMode(colors, mode) {
   const sorted = [...colors]
 
   if (mode === 'date-asc') {
@@ -480,21 +547,27 @@ function sortColors(colors) {
     })
     return sorted
   }
-  if (mode === 'hue') {
-    return sortByHue(sorted)
-  }
-  if (mode === 'lightness') {
-    return sortByLightness(sorted)
-  }
-  if (mode === 'chroma') {
-    return sortByChroma(sorted)
-  }
-  if (mode === 'warmth') {
-    return sortByWarmth(sorted)
-  }
 
   sorted.sort((a, b) => b.colorDate.localeCompare(a.colorDate))
   return sorted
+}
+
+function sortByColorMode(colors, mode) {
+  if (mode === 'hue') return sortByHue(colors)
+  if (mode === 'lightness') return sortByLightness(colors)
+  if (mode === 'chroma') return sortByChroma(colors)
+  if (mode === 'warmth') return sortByWarmth(colors)
+  if (mode === 'seasonal') return sortBySeasonal(colors)
+  if (mode === 'complement') return sortByComplementPairs(colors)
+  return colors
+}
+
+function sortColors(colors) {
+  const colorMode = colorSortSelect.value
+  if (COLOR_SORT_MODES.includes(colorMode)) {
+    return sortByColorMode(colors, colorMode)
+  }
+  return sortByGeneralMode(colors, sortSelect.value)
 }
 
 function getDisplayColors() {
@@ -503,11 +576,22 @@ function getDisplayColors() {
 
 function loadSortMode() {
   const stored = localStorage.getItem(SORT_STORAGE)
+  const storedColor = localStorage.getItem(COLOR_SORT_STORAGE)
+
+  if (COLOR_SORT_MODES.includes(stored) && !storedColor) {
+    sortSelect.value = SORT_DEFAULT
+    colorSortSelect.value = stored
+    saveSortMode()
+    return
+  }
+
   sortSelect.value = SORT_MODES.includes(stored) ? stored : SORT_DEFAULT
+  colorSortSelect.value = COLOR_SORT_MODES.includes(storedColor) ? storedColor : COLOR_SORT_DEFAULT
 }
 
 function saveSortMode() {
   localStorage.setItem(SORT_STORAGE, sortSelect.value)
+  localStorage.setItem(COLOR_SORT_STORAGE, colorSortSelect.value)
 }
 
 function clearFilterMessage() {
@@ -522,12 +606,17 @@ function hasActiveSort() {
   return sortSelect.value !== SORT_DEFAULT
 }
 
+function hasActiveColorSort() {
+  return colorSortSelect.value !== COLOR_SORT_DEFAULT
+}
+
 function updateFilterUi() {
   filterClear.hidden = !hasActiveFilters()
 }
 
 function updateSortUi() {
   sortClear.hidden = !hasActiveSort()
+  colorSortClear.hidden = !hasActiveColorSort()
 }
 
 function updateToolbarUi() {
@@ -556,12 +645,21 @@ function applyFilters() {
 
 function resetToDefaultView() {
   localStorage.setItem(SORT_STORAGE, SORT_DEFAULT)
+  localStorage.setItem(COLOR_SORT_STORAGE, COLOR_SORT_DEFAULT)
   window.location.href = window.location.origin + window.location.pathname
 }
 
 function clearSort() {
   sortSelect.value = SORT_DEFAULT
   saveSortMode()
+  updateToolbarUi()
+  refreshWallDisplay()
+}
+
+function clearColorSort() {
+  colorSortSelect.value = COLOR_SORT_DEFAULT
+  saveSortMode()
+  updateToolbarUi()
   refreshWallDisplay()
 }
 
@@ -757,12 +855,19 @@ filterForm.addEventListener('input', applyFilters)
 filterForm.addEventListener('change', applyFilters)
 filterClear.addEventListener('click', clearFilters)
 sortClear.addEventListener('click', clearSort)
+colorSortClear.addEventListener('click', clearColorSort)
 siteTitle.addEventListener('click', (event) => {
   event.preventDefault()
   resetToDefaultView()
 })
 sortSelect.addEventListener('change', () => {
   saveSortMode()
+  updateToolbarUi()
+  refreshWallDisplay()
+})
+colorSortSelect.addEventListener('change', () => {
+  saveSortMode()
+  updateToolbarUi()
   refreshWallDisplay()
 })
 

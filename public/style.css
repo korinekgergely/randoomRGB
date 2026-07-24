@@ -8,6 +8,7 @@
   /* Toolbar panels: set both to var(--surface) to disable block tint */
   --panel-filter: #fafafa;
   --panel-sort: #f3f3f3;
+  --panel-color-sort: #eef2f7;
   --clear-bg: #e8f2ff;
   --clear-border: #5b8fd9;
   --clear-text: #1a56a8;
@@ -154,6 +155,10 @@ body {
   border-radius: 8px;
   background: var(--panel-sort);
   font-size: 0.9rem;
+}
+
+.color-sort-group {
+  background: var(--panel-color-sort);
 }
 
 .sort-field {
@@ -576,6 +581,7 @@ body.color-immersive {
   .filter-group,
   .filters,
   .sort-group,
+  .color-sort-group,
   .size-control,
   .labels-toggle {
     width: 100%;
@@ -589,6 +595,11 @@ body.color-immersive {
   .sort-group {
     padding: 10px 12px;
     background: #ededed;
+  }
+
+  .color-sort-group {
+    padding: 10px 12px;
+    background: #e4ebf4;
   }
 
   .panel-clear {

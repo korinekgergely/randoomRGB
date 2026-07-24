@@ -60,13 +60,24 @@
             <option value="hex-desc">Hex, Z→A</option>
             <option value="likes-desc">Likes, most</option>
             <option value="likes-asc">Likes, fewest</option>
+          </select>
+        </label>
+        <button type="button" id="sortClear" class="panel-clear" hidden>Clear</button>
+      </div>
+      <div class="sort-group color-sort-group">
+        <label class="sort-field" for="colorSortSelect">
+          <span>Color</span>
+          <select id="colorSortSelect" class="sort-select" aria-label="Sort by color">
+            <option value="">—</option>
             <option value="hue">Hue, rainbow</option>
             <option value="lightness">Lightness, dark→light</option>
             <option value="chroma">Chroma, muted→vivid</option>
             <option value="warmth">Warm→cool</option>
+            <option value="seasonal">Seasonal</option>
+            <option value="complement">Complement pairs</option>
           </select>
         </label>
-        <button type="button" id="sortClear" class="panel-clear" hidden>Clear</button>
+        <button type="button" id="colorSortClear" class="panel-clear" hidden>Clear</button>
       </div>
       <label class="size-control">
         <span>Cell size</span>
