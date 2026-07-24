@@ -30,6 +30,9 @@ const SORT_MODES = [
   'likes-desc',
   'likes-asc',
   'hue',
+  'lightness',
+  'chroma',
+  'warmth',
 ]
 const SORT_DEFAULT = 'date-desc'
 const MESSAGE_HIDE_MS = 30000
@@ -372,13 +375,16 @@ function hexToOklab(hex) {
   return rgbToOklab(r, g, b)
 }
 
-function sortByHue(colors) {
-  const GRAY_CHROMA = 0.04
-  const items = colors.map((color) => {
-    const oklab = hexToOklab(color.hex)
-    const oklch = oklabToOklch(oklab)
+function mapColorsWithOklch(colors) {
+  return colors.map((color) => {
+    const oklch = oklabToOklch(hexToOklab(color.hex))
     return { color, oklch, hexKey: hexSortKey(color.hex) }
   })
+}
+
+function sortByHue(colors) {
+  const GRAY_CHROMA = 0.04
+  const items = mapColorsWithOklch(colors)
 
   items.sort((a, b) => {
     const aGray = a.oklch.C < GRAY_CHROMA
@@ -391,6 +397,49 @@ function sortByHue(colors) {
     if (a.oklch.H !== b.oklch.H) return a.oklch.H - b.oklch.H
     if (a.oklch.C !== b.oklch.C) return b.oklch.C - a.oklch.C
     if (a.oklch.L !== b.oklch.L) return b.oklch.L - a.oklch.L
+    return a.hexKey.localeCompare(b.hexKey)
+  })
+
+  return items.map((item) => item.color)
+}
+
+function sortByLightness(colors) {
+  const items = mapColorsWithOklch(colors)
+
+  items.sort((a, b) => {
+    if (a.oklch.L !== b.oklch.L) return a.oklch.L - b.oklch.L
+    if (a.oklch.C !== b.oklch.C) return b.oklch.C - a.oklch.C
+    return a.hexKey.localeCompare(b.hexKey)
+  })
+
+  return items.map((item) => item.color)
+}
+
+function sortByChroma(colors) {
+  const items = mapColorsWithOklch(colors)
+
+  items.sort((a, b) => {
+    if (a.oklch.C !== b.oklch.C) return a.oklch.C - b.oklch.C
+    if (a.oklch.L !== b.oklch.L) return a.oklch.L - b.oklch.L
+    return a.hexKey.localeCompare(b.hexKey)
+  })
+
+  return items.map((item) => item.color)
+}
+
+function warmthScore(oklch) {
+  const radians = ((oklch.H - 50) * Math.PI) / 180
+  return oklch.C * Math.cos(radians)
+}
+
+function sortByWarmth(colors) {
+  const items = mapColorsWithOklch(colors)
+
+  items.sort((a, b) => {
+    const warmA = warmthScore(a.oklch)
+    const warmB = warmthScore(b.oklch)
+    if (warmA !== warmB) return warmB - warmA
+    if (a.oklch.L !== b.oklch.L) return a.oklch.L - b.oklch.L
     return a.hexKey.localeCompare(b.hexKey)
   })
 
@@ -433,6 +482,15 @@ function sortColors(colors) {
   }
   if (mode === 'hue') {
     return sortByHue(sorted)
+  }
+  if (mode === 'lightness') {
+    return sortByLightness(sorted)
+  }
+  if (mode === 'chroma') {
+    return sortByChroma(sorted)
+  }
+  if (mode === 'warmth') {
+    return sortByWarmth(sorted)
   }
 
   sorted.sort((a, b) => b.colorDate.localeCompare(a.colorDate))
